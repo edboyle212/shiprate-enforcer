@@ -39,10 +39,13 @@ Dev server listens on [http://127.0.0.1:43123](http://127.0.0.1:43123).
 
 Routes:
 
+- Dashboard: `/dashboard`
 - Import center: `/imports`
-- Discrepancies: `/discrepancies`
+- Discrepancies: `/discrepancies` (detail: `/discrepancies/{id}`)
 - Partner wizard: `/partner/{partnerId}/onboarding`
 - Client wizard: `/p/{partnerSlug}/onboarding`
+
+Dispute drafts are **DRAFT only** — human approve, no auto-send. AI column mapping is assist-only (`SHIPRATE_AI_ENABLED=1` + provider keys); it never writes rate tables or monetary dispute decisions.
 
 ### API highlights (prefix `/api/v1`)
 
@@ -55,6 +58,14 @@ Routes:
 | POST | `/compliance/run` | Rate matched pairs vs approved rate card |
 | GET | `/discrepancies` | List over-tolerance rows |
 | GET | `/discrepancies/{id}` | Detail with rating trace summary |
+| PATCH | `/discrepancies/{id}` | Review workflow (status + comment) |
+| POST | `/discrepancies/{id}/open-case` | Open dispute case (claim from variance) |
+| GET | `/dispute-cases` | List dispute cases |
+| GET | `/dispute-cases/{id}` | Case detail, drafts, events |
+| POST | `/dispute-cases/{id}/draft` | Generate email draft from trace |
+| POST | `/dispute-cases/{id}/approve-draft` | Human approve draft (no send) |
+| GET | `/reporting/summary` | Dashboard KPIs |
+| POST | `/ai/map-columns` | Proposed CSV column mapping (template or AI) |
 
 Dev tenancy header: `X-Organization-Id`.
 

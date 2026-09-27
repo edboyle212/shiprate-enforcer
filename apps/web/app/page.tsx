@@ -9,6 +9,12 @@ export default function Home() {
       </p>
       <div className="mt-10 flex flex-col gap-3 sm:flex-row sm:flex-wrap justify-center">
         <Link
+          href="/dashboard"
+          className="rounded-lg bg-indigo-600 px-5 py-3 text-sm font-medium text-center"
+        >
+          Dashboard
+        </Link>
+        <Link
           href="/imports"
           className="rounded-lg bg-emerald-600 px-5 py-3 text-sm font-medium text-center"
         >

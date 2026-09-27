@@ -88,18 +88,24 @@ export default function DiscrepanciesPage() {
                   <th className="px-4 py-3">Allowed</th>
                   <th className="px-4 py-3">Variance</th>
                   <th className="px-4 py-3">Reasons</th>
+                  <th className="px-4 py-3">Review</th>
                   <th className="px-4 py-3">Created</th>
                 </tr>
               </thead>
               <tbody>
                 {rows.map((row) => (
                   <tr key={row.id} className="border-t border-slate-800">
-                    <td className="px-4 py-3">{formatMoney(row.billed_amount_minor, row.currency_code)}</td>
+                    <td className="px-4 py-3">
+                      <Link href={`/discrepancies/${row.id}`} className="text-emerald-400 hover:underline">
+                        {formatMoney(row.billed_amount_minor, row.currency_code)}
+                      </Link>
+                    </td>
                     <td className="px-4 py-3">{formatMoney(row.allowed_amount_minor, row.currency_code)}</td>
                     <td className="px-4 py-3 text-amber-300">
                       {formatMoney(row.variance_minor, row.currency_code)}
                     </td>
                     <td className="px-4 py-3 font-mono text-xs">{row.reason_codes.join(", ")}</td>
+                    <td className="px-4 py-3 text-xs">{row.review_status}</td>
                     <td className="px-4 py-3 text-xs text-slate-400">{row.created_at}</td>
                   </tr>
                 ))}

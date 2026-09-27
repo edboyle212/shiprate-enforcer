@@ -8,8 +8,10 @@ import {
   createOrganization,
   mapInvoiceCsv,
   mapShipmentCsv,
+  proposeColumnMapping,
   runMatching,
   uploadSourceFile,
+  type ColumnMapping,
 } from "@/lib/api";
 
 const DEMO_ORG_KEY = "shiprate_demo_org_id";
@@ -26,6 +28,13 @@ export default function ImportsPage() {
   const [orgId, setOrgId] = useState("");
   const [status, setStatus] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [pendingMap, setPendingMap] = useState<{
+    kind: "shipment_export" | "carrier_invoice";
+    importJobId: string;
+    csvText: string;
+    mapping: ColumnMapping;
+    usedAi: boolean;
+  } | null>(null);
 
   useEffect(() => {
     const stored = window.localStorage.getItem(DEMO_ORG_KEY);
@@ -42,13 +51,48 @@ export default function ImportsPage() {
 
   async function onUpload(kind: "shipment_export" | "carrier_invoice" | "rate_card", file: File) {
     setError(null);
+    setPendingMap(null);
     try {
       const id = await ensureOrg();
+      const text = await file.text();
       const source = await uploadSourceFile(id, kind, file);
-      await createImportJob(id, source.id, `${kind}:${source.sha256_hex}`);
-      setStatus(`Uploaded ${file.name} (${kind})`);
+      const job = await createImportJob(id, source.id, `${kind}:${source.sha256_hex}`);
+      if (kind === "rate_card") {
+        setStatus(`Uploaded ${file.name} (${kind})`);
+        return;
+      }
+      const headers = text.split(/\r?\n/)[0]?.split(",") ?? [];
+      const proposal = await proposeColumnMapping(
+        id,
+        headers.map((h) => h.trim()),
+        kind,
+      );
+      setPendingMap({
+        kind,
+        importJobId: job.id,
+        csvText: text,
+        mapping: proposal.mapping,
+        usedAi: proposal.used_ai,
+      });
+      setStatus(`Uploaded ${file.name} — confirm column mapping below.`);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Upload failed");
+    }
+  }
+
+  async function acceptMapping() {
+    if (!pendingMap || !orgId) return;
+    setError(null);
+    try {
+      if (pendingMap.kind === "shipment_export") {
+        await mapShipmentCsv(orgId, pendingMap.importJobId, pendingMap.csvText, pendingMap.mapping);
+      } else {
+        await mapInvoiceCsv(orgId, pendingMap.importJobId, pendingMap.csvText, pendingMap.mapping);
+      }
+      setStatus(`Mapping accepted (${pendingMap.usedAi ? "AI assist" : "template"}) — rows imported.`);
+      setPendingMap(null);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Mapping failed");
     }
   }
 
@@ -124,11 +168,34 @@ export default function ImportsPage() {
           Run sample CSV pipeline (needs approved rate card)
         </button>
 
+        {pendingMap && (
+          <div className="rounded-xl border border-slate-200 p-4 space-y-3">
+            <p className="text-sm font-medium">Proposed column mapping</p>
+            <p className="text-xs text-slate-500">
+              Source: {pendingMap.usedAi ? "AI assist (feature-flagged)" : "default template"}
+            </p>
+            <ul className="space-y-1 text-xs font-mono">
+              {Object.entries(pendingMap.mapping).map(([field, column]) => (
+                <li key={field}>
+                  {field} → {column}
+                </li>
+              ))}
+            </ul>
+            <button
+              type="button"
+              onClick={() => void acceptMapping()}
+              className="w-full rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white"
+            >
+              Accept mapping & import rows
+            </button>
+          </div>
+        )}
+
         {status && <p className="text-sm text-emerald-700">{status}</p>}
         {error && <p className="text-sm text-red-600">{error}</p>}
 
         <p className="text-xs text-slate-500">
-          API: POST /source-files, /import-jobs, /imports/map-csv, /imports/map-invoice-csv, POST /matching/run
+          API: POST /source-files, /import-jobs, POST /ai/map-columns, /imports/map-csv, POST /matching/run
         </p>
       </main>
     </div>

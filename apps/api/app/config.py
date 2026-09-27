@@ -49,5 +49,17 @@ class Settings(BaseSettings):
 
     etl_drop_root: str = "etl-drops"
 
+    shiprate_ai_enabled: bool = False
+    ai_jev_api_key: str | None = None
+    ai_grok_api_key: str | None = None
+    ai_claude_api_key: str | None = None
+
 
 settings = Settings()
+
+
+def ai_enabled_globally() -> bool:
+    raw = os.environ.get("SHIPRATE_AI_ENABLED", "")
+    if raw.lower() in ("1", "true", "yes"):
+        return True
+    return bool(settings.shiprate_ai_enabled)

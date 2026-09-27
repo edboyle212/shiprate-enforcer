@@ -283,6 +283,23 @@ class ComplianceCheckStatus(str, enum.Enum):
     error = "error"
 
 
+class DiscrepancyReviewStatus(str, enum.Enum):
+    open = "open"
+    approved = "approved"
+    rejected = "rejected"
+    hold = "hold"
+
+
+class DisputeCaseStatus(str, enum.Enum):
+    open = "open"
+    closed = "closed"
+
+
+class DisputeDraftStatus(str, enum.Enum):
+    draft = "draft"
+    approved = "approved"
+
+
 class CompliancePolicy(Base):
     __tablename__ = "compliance_policies"
 
@@ -365,6 +382,138 @@ class Discrepancy(Base):
     variance_minor: Mapped[int] = mapped_column(BigInteger, nullable=False)
     currency_code: Mapped[str] = mapped_column(String(3), nullable=False, default="USD")
     trace_summary_json: Mapped[dict] = mapped_column(JSONB, nullable=False, server_default="{}")
+    review_status: Mapped[DiscrepancyReviewStatus] = mapped_column(
+        Enum(DiscrepancyReviewStatus, name="discrepancy_review_status"),
+        nullable=False,
+        default=DiscrepancyReviewStatus.open,
+    )
+    review_comment: Mapped[str | None] = mapped_column(Text, nullable=True)
+    reviewed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     compliance_check: Mapped["ComplianceCheck"] = relationship(back_populates="discrepancy")
+    dispute_case: Mapped["DisputeCase | None"] = relationship(back_populates="discrepancy", uselist=False)
+    events: Mapped[list["DiscrepancyEvent"]] = relationship(back_populates="discrepancy")
+
+
+class DiscrepancyEvent(Base):
+    __tablename__ = "discrepancy_events"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    organization_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("organizations.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    discrepancy_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("discrepancies.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    event_type: Mapped[str] = mapped_column(String(64), nullable=False)
+    payload_json: Mapped[dict] = mapped_column(JSONB, nullable=False, server_default="{}")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+    discrepancy: Mapped["Discrepancy"] = relationship(back_populates="events")
+
+
+class DisputeCase(Base):
+    __tablename__ = "dispute_cases"
+    __table_args__ = (UniqueConstraint("organization_id", "discrepancy_id", name="uq_dispute_case_org_discrepancy"),)
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    organization_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("organizations.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    discrepancy_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("discrepancies.id", ondelete="CASCADE"), nullable=False
+    )
+    claim_amount_minor: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    currency_code: Mapped[str] = mapped_column(String(3), nullable=False, default="USD")
+    status: Mapped[DisputeCaseStatus] = mapped_column(
+        Enum(DisputeCaseStatus, name="dispute_case_status"), nullable=False, default=DisputeCaseStatus.open
+    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+    discrepancy: Mapped["Discrepancy"] = relationship(back_populates="dispute_case")
+    events: Mapped[list["DisputeCaseEvent"]] = relationship(back_populates="dispute_case")
+    drafts: Mapped[list["DisputeDraft"]] = relationship(back_populates="dispute_case")
+
+
+class DisputeCaseEvent(Base):
+    __tablename__ = "dispute_case_events"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    organization_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("organizations.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    dispute_case_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("dispute_cases.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    event_type: Mapped[str] = mapped_column(String(64), nullable=False)
+    payload_json: Mapped[dict] = mapped_column(JSONB, nullable=False, server_default="{}")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+    dispute_case: Mapped["DisputeCase"] = relationship(back_populates="events")
+
+
+class DisputeDraft(Base):
+    __tablename__ = "dispute_drafts"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    organization_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("organizations.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    dispute_case_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("dispute_cases.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    email_subject: Mapped[str] = mapped_column(String(512), nullable=False)
+    email_body: Mapped[str] = mapped_column(Text, nullable=False)
+    status: Mapped[DisputeDraftStatus] = mapped_column(
+        Enum(DisputeDraftStatus, name="dispute_draft_status"), nullable=False, default=DisputeDraftStatus.draft
+    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    approved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+    dispute_case: Mapped["DisputeCase"] = relationship(back_populates="drafts")
+
+
+class AiFeatureFlag(Base):
+    __tablename__ = "ai_feature_flags"
+    __table_args__ = (UniqueConstraint("organization_id", "feature_key", name="uq_ai_feature_org_key"),)
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    organization_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("organizations.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    feature_key: Mapped[str] = mapped_column(String(64), nullable=False)
+    enabled: Mapped[bool] = mapped_column(nullable=False, default=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class AiDecisionRequest(Base):
+    __tablename__ = "ai_decision_requests"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    organization_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("organizations.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    decision_type: Mapped[str] = mapped_column(String(64), nullable=False)
+    input_json: Mapped[dict] = mapped_column(JSONB, nullable=False, server_default="{}")
+    provider: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+    result: Mapped["AiDecisionResult | None"] = relationship(back_populates="request", uselist=False)
+
+
+class AiDecisionResult(Base):
+    __tablename__ = "ai_decision_results"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    organization_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("organizations.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    request_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("ai_decision_requests.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    output_json: Mapped[dict] = mapped_column(JSONB, nullable=False, server_default="{}")
+    used_ai: Mapped[bool] = mapped_column(nullable=False, default=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+    request: Mapped["AiDecisionRequest"] = relationship(back_populates="result")
