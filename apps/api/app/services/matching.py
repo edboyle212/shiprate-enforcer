@@ -52,14 +52,14 @@ match_by_tracking = tracking_numbers_match
 
 def _sync_set_org(session: Session, organization_id: uuid.UUID) -> None:
     session.execute(
-        text("SET LOCAL app.organization_id = :org_id"),
+        text("SELECT set_config('app.organization_id', :org_id, true)"),
         {"org_id": str(organization_id)},
     )
 
 
 def _ensure_organization(session: Session, organization_id: uuid.UUID) -> None:
     if session.get(Organization, organization_id) is None:
-        slug = f"org-{str(organization_id)[:8]}"
+        slug = f"org-{organization_id.hex}"
         session.add(Organization(id=organization_id, name=slug, slug=slug))
         session.flush()
 

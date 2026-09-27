@@ -16,7 +16,7 @@ from app.models import Organization, Shipment
 
 def _ensure_organization(session: Session, organization_id: uuid.UUID) -> None:
     if session.get(Organization, organization_id) is None:
-        slug = f"org-{str(organization_id)[:8]}"
+        slug = f"org-{organization_id.hex}"
         session.add(
             Organization(
                 id=organization_id,
@@ -38,15 +38,12 @@ def set_organization_context(organization_id: uuid.UUID) -> None:
     _org_ctx.set(organization_id)
 
 
-def _session_with_rls() -> Session:
-    session = SessionLocal()
+def _apply_org(session: Session) -> None:
     org_id = _org_ctx.get()
-    if org_id is not None:
-        session.execute(
-            text("SET LOCAL app.organization_id = :org_id"),
-            {"org_id": str(org_id)},
-        )
-    return session
+    session.execute(
+        text("SELECT set_config('app.organization_id', :org_id, true)"),
+        {"org_id": "" if org_id is None else str(org_id)},
+    )
 
 
 def create_test_shipment(
@@ -55,9 +52,13 @@ def create_test_shipment(
     shipment_id: uuid.UUID,
     tracking_number: str,
 ) -> Shipment:
-    with _session_with_rls() as session:
+    with SessionLocal() as session:
         with session.begin():
+            _apply_org(session)
             _ensure_organization(session, organization_id)
+            existing = session.get(Shipment, shipment_id)
+            if existing is not None:
+                return existing
             row = Shipment(
                 id=shipment_id,
                 organization_id=organization_id,
@@ -71,9 +72,9 @@ def create_test_shipment(
 
 def list_shipments(*, organization_id: uuid.UUID) -> list[Shipment | dict[str, Any]]:
     set_organization_context(organization_id)
-    with _session_with_rls() as session:
+    with SessionLocal() as session:
         with session.begin():
-            rows = session.scalars(
-                select(Shipment).where(Shipment.organization_id == organization_id)
-            ).all()
+            _apply_org(session)
+            # No organization_id predicate: RLS must hide other tenants.
+            rows = session.scalars(select(Shipment)).all()
             return list(rows)

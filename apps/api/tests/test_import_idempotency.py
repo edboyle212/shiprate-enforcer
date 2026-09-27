@@ -50,4 +50,10 @@ def test_same_idempotency_key_does_not_duplicate_import_job(import_jobs):
     second = create(**payload)
 
     assert count(organization_id=ORG_ID, idempotency_key=IDEMPOTENCY_KEY) == 1
-    assert getattr(second, "id", second.get("id")) == getattr(first, "id", first.get("id"))
+
+    def _row_id(row: object) -> object:
+        if isinstance(row, dict):
+            return row["id"]
+        return row.id
+
+    assert _row_id(second) == _row_id(first)

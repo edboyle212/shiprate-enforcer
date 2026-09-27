@@ -50,7 +50,7 @@ async def get_reporting_summary(session: AsyncSession, organization_id: uuid.UUI
     if check_total and check_total > 0:
         compliance_rate = round(float(passed or 0) / float(check_total), 4)
     else:
-        note = "TODO: compliance rate requires compliance_checks data"
+        note = "No compliance checks yet"
 
     return ReportingSummary(
         discrepancy_count=int(disc_count or 0),

@@ -1,0 +1,27 @@
+---
+description: How to talk to Edward — simple steps, what to skip, where things are
+alwaysApply: true
+---
+
+# How we work
+
+Edward is the decision-maker. Explain like he is new to this repo every time. Be patient. One next step. Short words.
+
+Every reply to Edward has these three parts, in this order, with these headings:
+
+## Do this
+Numbered steps he can follow without guessing. Each step says the exact click, command, URL, or file. If the agent should do the work, say "I will do this" and still list the steps so he can watch.
+
+## Do not
+The one or two mistakes that would waste his time right now. Concrete. Example: "Do not install Docker." "Do not start Clerk."
+
+## Where things are
+The assets for this step only: folder path, URL, port, organization id, or file. No extra maps.
+
+Rules:
+
+- Do not open with a recap of architecture, options, or history.
+- Do not ask him to pick among plans unless a choice blocks the next step.
+- Do not say "switch modes" unless he must flip a switch himself. Name the switch.
+- If something is already running, say so and give the address.
+- If work is uncommitted, say which files and that they are not saved to git yet.

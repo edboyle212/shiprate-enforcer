@@ -15,7 +15,7 @@ from app.models import Organization, RateCardVersion, RateCardVersionStatus
 
 def _ensure_organization(session, organization_id: uuid.UUID) -> None:
     if session.get(Organization, organization_id) is None:
-        slug = f"org-{str(organization_id)[:8]}"
+        slug = f"org-{organization_id.hex}"
         session.add(Organization(id=organization_id, name=slug, slug=slug))
         session.flush()
 

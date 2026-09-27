@@ -8,14 +8,14 @@ Each request handler calls:
 
 ```python
 await session.execute(
-    text("SET LOCAL app.organization_id = :org_id"),
+    text("SELECT set_config('app.organization_id', :org_id, true)"),
     {"org_id": str(organization_id)},
 )
 ```
 
-`SET LOCAL` scopes the setting to the **current transaction**, so connection pooling cannot leak tenant context across requests.
+`set_config(name, value, true)` is transaction-scoped, same as `SET LOCAL`. PostgreSQL does not accept bound parameters in `SET`, so the helper is required. Connection pooling cannot leak tenant context across requests.
 
-RLS policies compare `organization_id::text` to `current_setting('app.organization_id', true)` via helper `app_current_organization_id()`.
+RLS policies compare `organization_id::text` to `current_setting('app.organization_id', true)` via helper `app_current_organization_id()`. Migration `005_force_rls` forces those policies on the table owner. `organizations` stays unforced so bootstrap inserts still work. An empty setting remains a bypass for migrations.
 
 ## Dev tenancy header
 
