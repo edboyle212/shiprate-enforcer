@@ -1,0 +1,23 @@
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+
+from app.config import settings
+from app.middleware.tenancy import TenancyMiddleware
+from app.routers import health, imports, orgs, rating
+
+app = FastAPI(title="Shiprate Enforcer API", version="0.1.0")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:43123", "http://127.0.0.1:43123"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+app.add_middleware(TenancyMiddleware)
+
+prefix = settings.api_prefix
+app.include_router(health.router, prefix=prefix, tags=["health"])
+app.include_router(orgs.router, prefix=prefix, tags=["organizations"])
+app.include_router(imports.router, prefix=prefix, tags=["imports"])
+app.include_router(rating.router, prefix=prefix, tags=["rating"])
