@@ -1,0 +1,18 @@
+{
+  "allowed_total_minor": 500,
+  "currency_code": "USD",
+  "status": "OK",
+  "trace_must_include": [
+    "engine_version",
+    "rate_card_version_id",
+    "contract_version_id",
+    "rules_evaluated",
+    "allowed_total_minor"
+  ],
+  "trace_assertions": {
+    "engine_version": "0.1.0",
+    "zone": 2,
+    "minimum_charge_applied": true,
+    "billable_weight_oz": 4
+  }
+}

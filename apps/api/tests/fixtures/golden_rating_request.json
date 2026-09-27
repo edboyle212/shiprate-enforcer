@@ -1,0 +1,38 @@
+{
+  "description": "Parcel GND: zone lookup from dest ZIP + minimum charge floor (plan §6 golden example)",
+  "engine_version": "0.1.0",
+  "rule_bundle_hash": "golden-zone-min-v1",
+  "organization_id": "01950000-0000-7000-8000-000000000001",
+  "carrier_account_id": "01950000-0000-7000-8000-000000000010",
+  "contract_version_id": "01950000-0000-7000-8000-000000000020",
+  "rate_card_version_id": "01950000-0000-7000-8000-000000000030",
+  "ship_date": "2025-01-15",
+  "currency_code": "USD",
+  "service_level": "GND",
+  "origin_postal": "60601",
+  "destination_postal": "10001",
+  "packages": [
+    {
+      "actual_weight_oz": 4,
+      "length_in": 6,
+      "width_in": 4,
+      "height_in": 2
+    }
+  ],
+  "policy": {
+    "billable_weight_source": "max_actual_dim",
+    "dim_divisor": 139,
+    "fuel_surcharge_pct": 0
+  },
+  "rate_card_snapshot": {
+    "zones": {
+      "10001": 2
+    },
+    "weight_break_table_minor": {
+      "GND|2|4oz": 450
+    },
+    "minimum_charge_minor": {
+      "GND": 500
+    }
+  }
+}
