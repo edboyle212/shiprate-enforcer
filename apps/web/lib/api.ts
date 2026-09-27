@@ -97,6 +97,67 @@ export async function pollEtlDrop(organizationId: string, partnerId: string) {
   return res.json();
 }
 
+export type DiscrepancySummary = {
+  id: string;
+  billed_amount_minor: number;
+  allowed_amount_minor: number;
+  variance_minor: number;
+  currency_code: string;
+  reason_codes: string[];
+  created_at: string;
+};
+
+export async function listDiscrepancies(organizationId: string) {
+  const res = await fetch(`${API_BASE}/discrepancies`, {
+    headers: { "X-Organization-Id": organizationId },
+  });
+  if (!res.ok) throw new Error(`List discrepancies failed ${res.status}`);
+  return res.json() as Promise<DiscrepancySummary[]>;
+}
+
+export async function mapShipmentCsv(organizationId: string, importJobId: string, csvText: string) {
+  const res = await fetch(`${API_BASE}/imports/map-csv`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-Organization-Id": organizationId,
+    },
+    body: JSON.stringify({ import_job_id: importJobId, csv_text: csvText }),
+  });
+  if (!res.ok) throw new Error(`Map shipments failed ${res.status}`);
+  return res.json();
+}
+
+export async function mapInvoiceCsv(organizationId: string, importJobId: string, csvText: string) {
+  const res = await fetch(`${API_BASE}/imports/map-invoice-csv`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-Organization-Id": organizationId,
+    },
+    body: JSON.stringify({ import_job_id: importJobId, csv_text: csvText }),
+  });
+  if (!res.ok) throw new Error(`Map invoice failed ${res.status}`);
+  return res.json();
+}
+
+export async function runMatching(organizationId: string, importJobId?: string) {
+  const res = await fetch(`${API_BASE}/matching/run`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-Organization-Id": organizationId,
+    },
+    body: JSON.stringify({ import_job_id: importJobId ?? null, run_compliance: true }),
+  });
+  if (!res.ok) throw new Error(`Matching run failed ${res.status}`);
+  return res.json() as Promise<{
+    exact_matches: number;
+    normalized_matches: number;
+    discrepancies_created: number | null;
+  }>;
+}
+
 export type PartnerOnboardingForm = {
   partner_name?: string;
   branding_mode?: string;

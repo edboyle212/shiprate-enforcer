@@ -1,5 +1,8 @@
 from app.models import (
     CarrierInvoiceLine,
+    ComplianceCheck,
+    CompliancePolicy,
+    Discrepancy,
     ImportJob,
     ImportRow,
     Organization,
@@ -8,6 +11,7 @@ from app.models import (
     RatingExplanation,
     RatingRun,
     Shipment,
+    ShipmentInvoiceMatch,
     SourceFile,
     User,
 )
@@ -24,4 +28,8 @@ __all__ = [
     "RateCardVersion",
     "RatingRun",
     "RatingExplanation",
+    "CompliancePolicy",
+    "ShipmentInvoiceMatch",
+    "ComplianceCheck",
+    "Discrepancy",
 ]

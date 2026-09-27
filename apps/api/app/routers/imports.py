@@ -10,6 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db import get_db, set_rls_organization
 from app.models import (
+    CarrierInvoiceLine,
     ImportJob,
     ImportJobStatus,
     ImportRow,
@@ -219,6 +220,93 @@ async def map_csv_shipments(
         import_job_id=job.id,
         rows_imported=rows_imported,
         shipments_created=shipments_created,
+    )
+
+
+class InvoiceCsvColumnMapping(BaseModel):
+    tracking_number: str = "tracking_number"
+    charge_code: str = "charge_code"
+    description: str = "description"
+    billed_amount: str = "billed_amount"
+
+
+class MapInvoiceCsvRequest(BaseModel):
+    import_job_id: UUID
+    mapping: InvoiceCsvColumnMapping = Field(default_factory=InvoiceCsvColumnMapping)
+    csv_text: str
+    currency_code: str = "USD"
+    amount_in_major_units: bool = True
+
+
+class MapInvoiceCsvResponse(BaseModel):
+    import_job_id: UUID
+    rows_imported: int
+    invoice_lines_created: int
+
+
+def _parse_amount_minor(raw: str | None, *, currency_code: str, amount_in_major_units: bool) -> int:
+    if not raw:
+        return 0
+    value = float(raw.replace(",", "").strip())
+    if amount_in_major_units:
+        return int(round(value * 100))
+    return int(value)
+
+
+@router.post("/imports/map-invoice-csv", response_model=MapInvoiceCsvResponse)
+async def map_csv_invoice_lines(
+    body: MapInvoiceCsvRequest,
+    db: AsyncSession = Depends(get_db),
+    org_id: UUID = Depends(require_org_id),
+) -> MapInvoiceCsvResponse:
+    """Stub mapper: carrier invoice CSV → `carrier_invoice_lines` (no LLM)."""
+    await set_rls_organization(db, org_id)
+
+    job = await db.scalar(
+        select(ImportJob).where(ImportJob.id == body.import_job_id, ImportJob.organization_id == org_id)
+    )
+    if not job:
+        raise HTTPException(status_code=404, detail="Import job not found")
+
+    reader = csv.DictReader(io.StringIO(body.csv_text))
+    rows_imported = 0
+    lines_created = 0
+    m = body.mapping
+
+    for idx, row in enumerate(reader, start=1):
+        rows_imported += 1
+        db.add(
+            ImportRow(
+                organization_id=org_id,
+                import_job_id=job.id,
+                row_number=idx,
+                raw_json=dict(row),
+            )
+        )
+        billed_raw = row.get(m.billed_amount)
+        line = CarrierInvoiceLine(
+            organization_id=org_id,
+            import_job_id=job.id,
+            tracking_number=row.get(m.tracking_number) or None,
+            charge_code=row.get(m.charge_code),
+            description=row.get(m.description),
+            billed_amount_minor=_parse_amount_minor(
+                billed_raw,
+                currency_code=body.currency_code,
+                amount_in_major_units=body.amount_in_major_units,
+            ),
+            currency_code=body.currency_code,
+        )
+        db.add(line)
+        lines_created += 1
+
+    job.status = ImportJobStatus.completed
+    await db.commit()
+
+    return MapInvoiceCsvResponse(
+        import_job_id=job.id,
+        rows_imported=rows_imported,
+        invoice_lines_created=lines_created,
     )
 
 

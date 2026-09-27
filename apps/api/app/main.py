@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import settings
 from app.middleware.tenancy import TenancyMiddleware
-from app.routers import etl, health, imports, orgs, partners, rating
+from app.routers import compliance, etl, health, imports, matching, orgs, partners, rating
 
 app = FastAPI(title="Shiprate Enforcer API", version="0.1.0")
 
@@ -23,3 +23,5 @@ app.include_router(partners.router, prefix=prefix, tags=["partners"])
 app.include_router(imports.router, prefix=prefix, tags=["imports"])
 app.include_router(etl.router, prefix=prefix, tags=["etl"])
 app.include_router(rating.router, prefix=prefix, tags=["rating"])
+app.include_router(matching.router, prefix=prefix, tags=["matching"])
+app.include_router(compliance.router, prefix=prefix, tags=["compliance"])

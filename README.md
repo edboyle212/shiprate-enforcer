@@ -39,8 +39,24 @@ Dev server listens on [http://127.0.0.1:43123](http://127.0.0.1:43123).
 
 Routes:
 
+- Import center: `/imports`
+- Discrepancies: `/discrepancies`
 - Partner wizard: `/partner/{partnerId}/onboarding`
 - Client wizard: `/p/{partnerSlug}/onboarding`
+
+### API highlights (prefix `/api/v1`)
+
+| Method | Path | Purpose |
+|--------|------|---------|
+| POST | `/imports/map-csv` | Map shipment export CSV → `shipments` |
+| POST | `/imports/map-invoice-csv` | Map carrier invoice CSV → `carrier_invoice_lines` |
+| POST | `/matching/run` | Tracking match (exact → normalized); optional compliance |
+| POST | `/matching/manual-link` | Manual shipment ↔ invoice line link |
+| POST | `/compliance/run` | Rate matched pairs vs approved rate card |
+| GET | `/discrepancies` | List over-tolerance rows |
+| GET | `/discrepancies/{id}` | Detail with rating trace summary |
+
+Dev tenancy header: `X-Organization-Id`.
 
 ## Tests
 

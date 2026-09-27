@@ -269,3 +269,102 @@ class EtlProcessedObject(Base):
     storage_key: Mapped[str] = mapped_column(String(1024), nullable=False)
     sha256_hex: Mapped[str] = mapped_column(String(64), nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class MatchType(str, enum.Enum):
+    exact = "exact"
+    normalized = "normalized"
+    manual = "manual"
+
+
+class ComplianceCheckStatus(str, enum.Enum):
+    passed = "passed"
+    failed = "failed"
+    error = "error"
+
+
+class CompliancePolicy(Base):
+    __tablename__ = "compliance_policies"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    organization_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("organizations.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    name: Mapped[str] = mapped_column(String(128), nullable=False)
+    rate_card_version_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("rate_card_versions.id", ondelete="SET NULL"), nullable=True
+    )
+    policy_json: Mapped[dict] = mapped_column(JSONB, nullable=False, server_default="{}")
+    is_default: Mapped[bool] = mapped_column(nullable=False, server_default="false")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class ShipmentInvoiceMatch(Base):
+    __tablename__ = "shipment_invoice_matches"
+    __table_args__ = (
+        UniqueConstraint("organization_id", "carrier_invoice_line_id", name="uq_match_org_invoice_line"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    organization_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("organizations.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    shipment_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("shipments.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    carrier_invoice_line_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("carrier_invoice_lines.id", ondelete="CASCADE"), nullable=False
+    )
+    match_type: Mapped[MatchType] = mapped_column(Enum(MatchType, name="match_type"), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class ComplianceCheck(Base):
+    __tablename__ = "compliance_checks"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    organization_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("organizations.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    shipment_invoice_match_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("shipment_invoice_matches.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    compliance_policy_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("compliance_policies.id", ondelete="SET NULL"), nullable=True
+    )
+    rate_card_version_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("rate_card_versions.id", ondelete="RESTRICT"), nullable=False
+    )
+    billed_amount_minor: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    allowed_amount_minor: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    variance_minor: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    currency_code: Mapped[str] = mapped_column(String(3), nullable=False, default="USD")
+    within_tolerance: Mapped[bool] = mapped_column(nullable=False)
+    status: Mapped[ComplianceCheckStatus] = mapped_column(
+        Enum(ComplianceCheckStatus, name="compliance_check_status"), nullable=False
+    )
+    rating_trace_json: Mapped[dict] = mapped_column(JSONB, nullable=False, server_default="{}")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+    discrepancy: Mapped["Discrepancy | None"] = relationship(back_populates="compliance_check", uselist=False)
+
+
+class Discrepancy(Base):
+    __tablename__ = "discrepancies"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    organization_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("organizations.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    compliance_check_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("compliance_checks.id", ondelete="CASCADE"), nullable=False, unique=True
+    )
+    reason_codes: Mapped[list] = mapped_column(JSONB, nullable=False, server_default="[]")
+    billed_amount_minor: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    allowed_amount_minor: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    variance_minor: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    currency_code: Mapped[str] = mapped_column(String(3), nullable=False, default="USD")
+    trace_summary_json: Mapped[dict] = mapped_column(JSONB, nullable=False, server_default="{}")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+    compliance_check: Mapped["ComplianceCheck"] = relationship(back_populates="discrepancy")

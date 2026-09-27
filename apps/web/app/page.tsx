@@ -7,10 +7,22 @@ export default function Home() {
       <p className="mt-3 max-w-lg text-center text-slate-400">
         Parcel rate compliance — billed vs allowed, deterministic engine, multi-tenant by organization.
       </p>
-      <div className="mt-10 flex flex-col gap-3 sm:flex-row">
+      <div className="mt-10 flex flex-col gap-3 sm:flex-row sm:flex-wrap justify-center">
+        <Link
+          href="/imports"
+          className="rounded-lg bg-emerald-600 px-5 py-3 text-sm font-medium text-center"
+        >
+          Import center
+        </Link>
+        <Link
+          href="/discrepancies"
+          className="rounded-lg border border-slate-700 px-5 py-3 text-sm text-center"
+        >
+          Discrepancies
+        </Link>
         <Link
           href="/partner/jasci/onboarding"
-          className="rounded-lg bg-emerald-600 px-5 py-3 text-sm font-medium text-center"
+          className="rounded-lg border border-slate-700 px-5 py-3 text-sm text-center"
         >
           Partner onboarding (demo)
         </Link>
