@@ -32,6 +32,8 @@ PYTHONPATH=apps/api pytest apps/api/tests -v
 | `test_rate_card_immutability.py` | Approved `rate_card_version` cannot be mutated in place. |
 | `test_rating_golden.py` | Golden fixture → allowed total + trace includes `engine_version`. |
 | `test_rating_replay.py` | Same inputs + `rule_bundle_hash` → identical result. |
+| `test_matching.py` | Normalized tracking match; no match when either side missing. Integration: persisted shipment↔invoice link (skips without DB). |
+| `test_compliance.py` | Billed above allowed + absolute tolerance → discrepancy with reason code. Integration: persisted discrepancy row (skips without DB). |
 
 Golden fixtures live in `apps/api/tests/fixtures/`:
 
@@ -48,6 +50,14 @@ Expected import paths (Building Agent contract — first match wins):
 - Import jobs: `app.services.import_jobs`, `app.imports.jobs`
 - Rate cards: `app.services.rate_cards`, `app.contracts.rate_cards`
 - Rating engine: `app.rating.engine`, `app.engine.rating`, `shiprate.rating.engine`
+- Tracking match: `app.services.matching`, `app.matching.engine`, `shiprate.matching`
+  - `normalize_tracking_number` / `normalize_tracking`
+  - `match_invoice_line_to_shipment` / `tracking_numbers_match` / `match_by_tracking`
+  - Integration: `persist_tracking_match` or `link_invoice_line_to_shipment` + lookup helper
+- Compliance: `app.services.compliance`, `app.compliance.engine`, `shiprate.compliance`
+  - `evaluate_compliance` / `check_line_compliance` — returns `None` when within tolerance
+  - Over tolerance: `reason_code` in `BILLED_EXCEEDS_ALLOWED`, `OVER_TOLERANCE` (case variants OK)
+  - Integration: `run_compliance_for_invoice_line` / `create_discrepancy_for_line` + list/get discrepancies
 
 ## Web (Playwright)
 
