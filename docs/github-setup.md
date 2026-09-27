@@ -12,17 +12,23 @@ Or set `GH_TOKEN` with a classic PAT (`repo` scope).
 
 ## Create repo and push
 
-From a clone at branch `cursor/mvp-finish-787e`:
+From a clone at branch `main`:
 
 ```bash
-gh repo create shiprate-enforcer --private --description "Multi-tenant parcel rate compliance (Shiprate Enforcer)" --source=. --remote=github --push
+gh auth login   # once, on your Mac
+git remote add github https://github.com/edboyle212/shiprate-enforcer.git
+git push -u github main
 ```
 
-If the repo already exists:
+**Cloud Project agents:** add `GH_TOKEN` (fine-grained PAT, Contents read/write) to the Project environment, then the coordinator can `git push github main` from the cloud workspace.
+
+**Transfer without Origin clone:** a `shiprate-main.bundle` of `main` may be in Project Context; on your Mac:
 
 ```bash
-git remote add github git@github.com:edward-boyle/shiprate-enforcer.git
-git push -u github cursor/mvp-finish-787e:main
+gh repo clone edboyle212/shiprate-enforcer ~/Projects/shiprate-enforcer
+cd ~/Projects/shiprate-enforcer
+git pull /path/to/shiprate-main.bundle main
+git push origin main
 ```
 
 ## Open PR (optional)
