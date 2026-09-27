@@ -38,7 +38,7 @@ class Settings(BaseSettings):
     dev_tenant_header: str = "X-Organization-Id"
 
     # Object storage: MinIO when configured, else local filesystem
-    s3_endpoint_url: str | None = "http://localhost:9000"
+    s3_endpoint_url: str | None = None
     s3_access_key: str = "minioadmin"
     s3_secret_key: str = "minioadmin"
     s3_bucket: str = "shiprate-uploads"
@@ -46,6 +46,8 @@ class Settings(BaseSettings):
     local_upload_dir: str = "./data/uploads"
 
     api_prefix: str = "/api/v1"
+
+    etl_drop_root: str = "etl-drops"
 
 
 settings = Settings()

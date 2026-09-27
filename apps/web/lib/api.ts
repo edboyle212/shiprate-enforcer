@@ -5,7 +5,7 @@ export async function savePartnerOnboarding(
   organizationId: string,
   payload: Record<string, unknown>,
 ) {
-  const res = await fetch(`${API_BASE}/partners/${partnerId}/onboarding`, {
+  const res = await fetch(`${API_BASE}/partners/${partnerId}/profile`, {
     method: "PUT",
     headers: {
       "Content-Type": "application/json",
@@ -19,9 +19,91 @@ export async function savePartnerOnboarding(
   return res.json();
 }
 
+export async function loadPartnerProfile(partnerId: string, organizationId: string) {
+  const res = await fetch(`${API_BASE}/partners/${partnerId}/profile`, {
+    headers: { "X-Organization-Id": organizationId },
+  });
+  if (!res.ok) return null;
+  return res.json();
+}
+
+export async function loadPublicBranding(partnerId: string) {
+  const res = await fetch(`${API_BASE}/partners/${partnerId}/public-branding`);
+  if (!res.ok) return null;
+  return res.json();
+}
+
+export async function createOrganization(name: string, slug: string, partnerId?: string) {
+  const res = await fetch(`${API_BASE}/organizations`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ name, slug, partner_id: partnerId }),
+  });
+  if (!res.ok) throw new Error(`API error ${res.status}`);
+  return res.json() as Promise<{ id: string; slug: string }>;
+}
+
+export async function uploadSourceFile(
+  organizationId: string,
+  kind: "shipment_export" | "carrier_invoice" | "rate_card",
+  file: File,
+) {
+  const form = new FormData();
+  form.append("file", file);
+  const res = await fetch(`${API_BASE}/source-files?kind=${kind}`, {
+    method: "POST",
+    headers: { "X-Organization-Id": organizationId },
+    body: form,
+  });
+  if (!res.ok) throw new Error(`Upload failed ${res.status}`);
+  return res.json() as Promise<{ id: string; sha256_hex: string }>;
+}
+
+export async function createImportJob(organizationId: string, sourceFileId: string, idempotencyKey: string) {
+  const res = await fetch(
+    `${API_BASE}/import-jobs?source_file_id=${sourceFileId}&idempotency_key=${encodeURIComponent(idempotencyKey)}`,
+    {
+      method: "POST",
+      headers: { "X-Organization-Id": organizationId },
+    },
+  );
+  if (!res.ok) throw new Error(`Import job failed ${res.status}`);
+  return res.json();
+}
+
+export async function saveClientOnboarding(organizationId: string, payload: Record<string, unknown>) {
+  const res = await fetch(`${API_BASE}/organizations/${organizationId}/client-onboarding`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      "X-Organization-Id": organizationId,
+    },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) throw new Error(`API error ${res.status}`);
+  return res.json();
+}
+
+export async function pollEtlDrop(organizationId: string, partnerId: string) {
+  const res = await fetch(`${API_BASE}/etl/poll-drop`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-Organization-Id": organizationId,
+    },
+    body: JSON.stringify({ partner_id: partnerId }),
+  });
+  if (!res.ok) throw new Error(`ETL poll failed ${res.status}`);
+  return res.json();
+}
+
 export type PartnerOnboardingForm = {
   partner_name?: string;
   branding_mode?: string;
+  display_name?: string;
+  logo_url?: string;
+  primary_color?: string;
+  support_email?: string;
   export_methods?: string[];
   export_fields?: Record<string, boolean | null>;
   carriers?: string[];
@@ -29,4 +111,5 @@ export type PartnerOnboardingForm = {
   ingest_mode?: string;
   is_3pl?: boolean | null;
   notes?: string;
+  client_invite_base_url?: string;
 };

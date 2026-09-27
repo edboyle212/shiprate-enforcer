@@ -2,9 +2,9 @@
 
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 
-import { PartnerOnboardingForm, savePartnerOnboarding } from "@/lib/api";
+import { loadPartnerProfile, PartnerOnboardingForm, savePartnerOnboarding } from "@/lib/api";
 
 const STEPS = [
   "Identity",
@@ -15,6 +15,7 @@ const STEPS = [
   "Embed",
   "Ingest",
   "3PL",
+  "Invite",
 ];
 
 export default function PartnerOnboardingPage() {
@@ -28,6 +29,23 @@ export default function PartnerOnboardingPage() {
   });
   const [status, setStatus] = useState<string | null>(null);
 
+  useEffect(() => {
+    if (!orgId || !params.partnerId) return;
+    loadPartnerProfile(params.partnerId, orgId).then((data) => {
+      if (data) {
+        const { branding, ...rest } = data as PartnerOnboardingForm & { branding?: Record<string, string> };
+        setForm({
+          ...rest,
+          branding_mode: branding?.branding_mode ?? rest.branding_mode,
+          logo_url: branding?.logo_url,
+          primary_color: branding?.primary_color,
+          support_email: branding?.support_email,
+          display_name: branding?.display_name ?? rest.display_name,
+        });
+      }
+    });
+  }, [orgId, params.partnerId]);
+
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
     if (!orgId) {
@@ -35,13 +53,26 @@ export default function PartnerOnboardingPage() {
       return;
     }
     try {
-      await savePartnerOnboarding(params.partnerId, orgId, form);
-      setStatus("Saved to organization settings via API.");
+      const payload = { ...form };
+      if (step === STEPS.length - 1 && !payload.client_invite_base_url) {
+        payload.client_invite_base_url =
+          typeof window !== "undefined"
+            ? `${window.location.origin}/p/${params.partnerId}/onboarding`
+            : `/p/${params.partnerId}/onboarding`;
+      }
+      await savePartnerOnboarding(params.partnerId, orgId, payload);
+      setStatus("Saved partner profile.");
       if (step < STEPS.length - 1) setStep(step + 1);
     } catch {
-      setStatus("Could not reach API — data kept in this session only.");
+      setStatus("Could not reach API — check API is running.");
     }
   }
+
+  const inviteUrl =
+    form.client_invite_base_url ??
+    (typeof window !== "undefined"
+      ? `${window.location.origin}/p/${params.partnerId}/onboarding`
+      : `/p/${params.partnerId}/onboarding`);
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-50">
@@ -63,7 +94,7 @@ export default function PartnerOnboardingPage() {
 
         <form onSubmit={onSubmit} className="space-y-4 rounded-xl border border-slate-800 bg-slate-900 p-6">
           <label className="block text-sm">
-            Dev organization ID
+            Dev organization ID (for API auth header during setup)
             <input
               className="mt-1 w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2"
               value={orgId}
@@ -84,18 +115,37 @@ export default function PartnerOnboardingPage() {
           )}
 
           {step === 1 && (
-            <label className="block text-sm">
-              Branding
-              <select
-                className="mt-1 w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2"
-                value={form.branding_mode ?? ""}
-                onChange={(e) => setForm({ ...form, branding_mode: e.target.value })}
-              >
-                <option value="">Select…</option>
-                <option value="co_brand">Co-brand</option>
-                <option value="white_label">White label</option>
-              </select>
-            </label>
+            <div className="space-y-3 text-sm">
+              <label className="block">
+                Branding mode
+                <select
+                  className="mt-1 w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2"
+                  value={form.branding_mode ?? ""}
+                  onChange={(e) => setForm({ ...form, branding_mode: e.target.value })}
+                >
+                  <option value="">Select…</option>
+                  <option value="co_brand">Co-brand</option>
+                  <option value="white_label">White label</option>
+                </select>
+              </label>
+              <label className="block">
+                Display name
+                <input
+                  className="mt-1 w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2"
+                  value={form.display_name ?? ""}
+                  onChange={(e) => setForm({ ...form, display_name: e.target.value })}
+                />
+              </label>
+              <label className="block">
+                Primary color
+                <input
+                  type="color"
+                  className="mt-1 h-10 w-full"
+                  value={form.primary_color ?? "#059669"}
+                  onChange={(e) => setForm({ ...form, primary_color: e.target.value })}
+                />
+              </label>
+            </div>
           )}
 
           {step === 2 && (
@@ -155,13 +205,17 @@ export default function PartnerOnboardingPage() {
 
           {step === 4 && (
             <label className="block text-sm">
-              Carriers (comma-separated)
+              Carriers billed (comma-separated)
               <input
                 className="mt-1 w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2"
+                defaultValue={form.carriers?.join(", ")}
                 onChange={(e) =>
                   setForm({
                     ...form,
-                    carriers: e.target.value.split(",").map((s) => s.trim()).filter(Boolean),
+                    carriers: e.target.value
+                      .split(",")
+                      .map((s) => s.trim())
+                      .filter(Boolean),
                   })
                 }
               />
@@ -173,7 +227,7 @@ export default function PartnerOnboardingPage() {
               Embed mode
               <select
                 className="mt-1 w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2"
-                value={form.embed_mode ?? ""}
+                value={form.embed_mode ?? "companion_url_only"}
                 onChange={(e) => setForm({ ...form, embed_mode: e.target.value })}
               >
                 <option value="companion_url_only">Companion URL</option>
@@ -206,8 +260,16 @@ export default function PartnerOnboardingPage() {
                 checked={form.is_3pl === true}
                 onChange={(e) => setForm({ ...form, is_3pl: e.target.checked ? true : null })}
               />
-              One WMS tenant maps to many bill-to accounts (3PL)
+              One WMS tenant maps to many bill-to accounts (3PL) — TBD
             </label>
+          )}
+
+          {step === 8 && (
+            <div className="space-y-2 text-sm">
+              <p>Share this URL with warehouse clients at rollout:</p>
+              <code className="block break-all rounded bg-slate-950 p-3 text-emerald-300">{inviteUrl}</code>
+              <p className="text-slate-400">POC: you can upload on their behalf instead of sending this link.</p>
+            </div>
           )}
 
           <div className="flex gap-3 pt-4">

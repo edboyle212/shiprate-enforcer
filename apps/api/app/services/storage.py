@@ -52,5 +52,30 @@ class StorageService:
 
         return key, digest
 
+    def _etl_root(self) -> Path:
+        return Path(settings.local_upload_dir) / settings.etl_drop_root
+
+    def list_etl_objects(self, partner_id: str, organization_id: str, subfolder: str) -> list[str]:
+        """Relative keys under etl-drops/{partner}/{org}/{subfolder}/."""
+        prefix = f"{settings.etl_drop_root}/{partner_id}/{organization_id}/{subfolder}"
+        if self._use_s3:
+            keys: list[str] = []
+            paginator = self._client.get_paginator("list_objects_v2")
+            for page in paginator.paginate(Bucket=settings.s3_bucket, Prefix=f"{prefix}/"):
+                for obj in page.get("Contents") or []:
+                    keys.append(obj["Key"])
+            return keys
+        base = self._etl_root() / partner_id / organization_id / subfolder
+        if not base.is_dir():
+            return []
+        return [f"{prefix}/{p.name}" for p in base.iterdir() if p.is_file()]
+
+    def read_object(self, key: str) -> bytes:
+        if self._use_s3:
+            resp = self._client.get_object(Bucket=settings.s3_bucket, Key=key)
+            return resp["Body"].read()
+        path = Path(settings.local_upload_dir) / key
+        return path.read_bytes()
+
 
 storage_service = StorageService()

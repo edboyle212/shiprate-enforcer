@@ -52,6 +52,13 @@ cd apps/api && PYTHONPATH=. python3 -m pytest tests -v
 
 Integration tests (import idempotency, rate-card immutability, RLS) need `DATABASE_URL` and migrations; RLS isolation also requires `SHIPRATE_RLS_ENABLED=1`.
 
+## Product docs
+
+- [MVP specification](docs/shiprate-mvp-spec.md)
+- [Partner variable sheet](docs/partner-variable-sheet.md)
+- [ETL drop contract](docs/etl-drop-contract.md)
+- [Wizard field lists](docs/wizard-field-lists.md)
+
 ## Monorepo layout
 
 | Path | Purpose |

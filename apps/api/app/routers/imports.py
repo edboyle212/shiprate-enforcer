@@ -317,14 +317,9 @@ async def get_partner_onboarding(
     db: AsyncSession = Depends(get_db),
     org_id: UUID = Depends(require_org_id),
 ) -> dict:
-    from app.models import Organization
+    from app.services.partner_profiles import get_partner_profile
 
-    await set_rls_organization(db, org_id)
-    org = await db.scalar(select(Organization).where(Organization.id == org_id))
-    if not org:
-        raise HTTPException(status_code=404, detail="Organization not found")
-    settings = org.settings_json or {}
-    return settings.get("partner_onboarding", {}).get(partner_id, {})
+    return await get_partner_profile(db, partner_id)
 
 
 @router.put("/partners/{partner_id}/onboarding")
@@ -334,17 +329,61 @@ async def save_partner_onboarding(
     db: AsyncSession = Depends(get_db),
     org_id: UUID = Depends(require_org_id),
 ) -> dict:
+    from app.services.partner_profiles import upsert_partner_profile
+
+    payload = body.model_dump(exclude_none=True)
+    return await upsert_partner_profile(db, partner_id, payload)
+
+
+@router.get("/organizations/{org_id}/client-onboarding")
+async def get_client_onboarding(
+    org_id: UUID,
+    db: AsyncSession = Depends(get_db),
+    current_org: UUID = Depends(require_org_id),
+) -> dict:
     from app.models import Organization
 
-    await set_rls_organization(db, org_id)
-    org = await db.scalar(select(Organization).where(Organization.id == org_id))
-    if not org:
-        raise HTTPException(status_code=404, detail="Organization not found")
+    if org_id != current_org:
+        from fastapi import HTTPException
 
+        raise HTTPException(status_code=403, detail="Organization mismatch")
+    await set_rls_organization(db, current_org)
+    org = await db.scalar(select(Organization).where(Organization.id == current_org))
+    if not org:
+        from fastapi import HTTPException
+
+        raise HTTPException(status_code=404, detail="Organization not found")
+    return (org.settings_json or {}).get("client_onboarding", {})
+
+
+class ClientOnboardingPayload(BaseModel):
+    org_name: str | None = None
+    export_method_override: str | None = None
+    carriers: list[str] = Field(default_factory=list)
+    tolerances: dict | None = None
+
+
+@router.put("/organizations/{org_id}/client-onboarding")
+async def save_client_onboarding(
+    org_id: UUID,
+    body: ClientOnboardingPayload,
+    db: AsyncSession = Depends(get_db),
+    current_org: UUID = Depends(require_org_id),
+) -> dict:
+    from app.models import Organization
+
+    if org_id != current_org:
+        from fastapi import HTTPException
+
+        raise HTTPException(status_code=403, detail="Organization mismatch")
+    await set_rls_organization(db, current_org)
+    org = await db.scalar(select(Organization).where(Organization.id == current_org))
+    if not org:
+        from fastapi import HTTPException
+
+        raise HTTPException(status_code=404, detail="Organization not found")
     settings = dict(org.settings_json or {})
-    partner_map = dict(settings.get("partner_onboarding", {}))
-    partner_map[partner_id] = body.model_dump(exclude_none=True)
-    settings["partner_onboarding"] = partner_map
+    settings["client_onboarding"] = body.model_dump(exclude_none=True)
     org.settings_json = settings
     await db.commit()
-    return partner_map[partner_id]
+    return settings["client_onboarding"]
