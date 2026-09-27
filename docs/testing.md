@@ -34,6 +34,10 @@ PYTHONPATH=apps/api pytest apps/api/tests -v
 | `test_rating_replay.py` | Same inputs + `rule_bundle_hash` → identical result. |
 | `test_matching.py` | Normalized tracking match; no match when either side missing. Integration: persisted shipment↔invoice link (skips without DB). |
 | `test_compliance.py` | Billed above allowed + absolute tolerance → discrepancy with reason code. Integration: persisted discrepancy row (skips without DB). |
+| `test_dispute_draft.py` | Dispute draft cites trace facts; draft-only (not sent). |
+| `test_ai_mapping.py` | Template mapping when AI disabled; `ai_runtime_enabled` gate on env + API keys. |
+| `test_ai_mapping_stub.py` | `map_columns` with stub client writes `ai_decision_requests` / `ai_decision_results`. |
+| `test_reporting_summary.py` | `GET /reporting/summary` returns dashboard KPI keys (`discrepancy_count`, `total_overcharge_minor`, `open_disputes`, `compliance_rate`, `compliance_rate_note`). |
 
 Golden fixtures live in `apps/api/tests/fixtures/`:
 
