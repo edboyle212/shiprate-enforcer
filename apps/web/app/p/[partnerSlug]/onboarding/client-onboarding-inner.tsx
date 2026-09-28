@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useParams, useSearchParams } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 
 import {
@@ -11,6 +11,7 @@ import {
   saveClientOnboarding,
   uploadSourceFile,
 } from "@/lib/api";
+import { writeOrgId } from "@/lib/session";
 
 const STEPS = ["Organization", "Carriers", "Uploads", "Policy", "Done"];
 
@@ -22,6 +23,7 @@ const UPLOAD_KINDS = [
 
 export default function ClientOnboardingInner() {
   const params = useParams<{ partnerSlug: string }>();
+  const router = useRouter();
   const searchParams = useSearchParams();
   const [step, setStep] = useState(0);
   const [orgId, setOrgId] = useState(searchParams.get("org") ?? "");
@@ -42,6 +44,7 @@ export default function ClientOnboardingInner() {
     const slug = orgName.toLowerCase().replace(/[^a-z0-9]+/g, "-").slice(0, 48) || "warehouse";
     const org = await createOrganization(orgName || slug, slug, params.partnerSlug);
     setOrgId(org.id);
+    writeOrgId(org.id);
     return org.id;
   }
 
@@ -58,13 +61,19 @@ export default function ClientOnboardingInner() {
   }
 
   async function finishOnboarding() {
-    const id = await ensureOrg();
-    await saveClientOnboarding(id, {
-      org_name: orgName,
-      carriers: carriers.split(",").map((s) => s.trim()).filter(Boolean),
-      tolerances: { absolute_minor: 500, percent: 2 },
-    });
-    setStep(STEPS.length - 1);
+    setError(null);
+    try {
+      const id = await ensureOrg();
+      await saveClientOnboarding(id, {
+        org_name: orgName,
+        carriers: carriers.split(",").map((s) => s.trim()).filter(Boolean),
+        tolerances: { absolute_minor: 500, percent: 2 },
+      });
+      writeOrgId(id);
+      router.push("/dashboard");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Could not finish setup");
+    }
   }
 
   return (
@@ -147,6 +156,8 @@ export default function ClientOnboardingInner() {
             Setup complete. Mapping confirmation and compliance runs continue in the import center (next slice).
           </p>
         )}
+
+        {error && step !== 2 && <p className="mt-4 text-sm text-red-600">{error}</p>}
 
         <div className="mt-8 flex justify-between">
           <button

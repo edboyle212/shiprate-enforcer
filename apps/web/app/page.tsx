@@ -15,6 +15,12 @@ export default function Home() {
           Dashboard
         </Link>
         <Link
+          href="/account"
+          className="rounded-lg bg-indigo-500 px-5 py-3 text-sm font-medium text-center"
+        >
+          Account
+        </Link>
+        <Link
           href="/imports"
           className="rounded-lg bg-emerald-600 px-5 py-3 text-sm font-medium text-center"
         >
@@ -31,6 +37,12 @@ export default function Home() {
           className="rounded-lg border border-slate-700 px-5 py-3 text-sm text-center"
         >
           Partner onboarding (demo)
+        </Link>
+        <Link
+          href="/partner/jasci/accounts"
+          className="rounded-lg border border-slate-700 px-5 py-3 text-sm text-center"
+        >
+          Partner accounts
         </Link>
         <Link
           href="/p/jasci/onboarding"

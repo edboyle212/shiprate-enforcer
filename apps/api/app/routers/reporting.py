@@ -15,6 +15,9 @@ class ReportingSummaryOut(BaseModel):
     discrepancy_count: int
     total_overcharge_minor: int
     open_disputes: int
+    recovered_total_minor: int
+    fee_total_minor: int
+    import_job_count: int = 0
     compliance_rate: float | None
     compliance_rate_note: str | None = None
 
@@ -30,6 +33,9 @@ async def reporting_summary(
         discrepancy_count=summary.discrepancy_count,
         total_overcharge_minor=summary.total_overcharge_minor,
         open_disputes=summary.open_disputes,
+        recovered_total_minor=summary.recovered_total_minor,
+        fee_total_minor=summary.fee_total_minor,
+        import_job_count=summary.import_job_count,
         compliance_rate=summary.compliance_rate,
         compliance_rate_note=summary.compliance_rate_note,
     )

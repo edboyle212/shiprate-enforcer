@@ -18,6 +18,9 @@ REQUIRED_SUMMARY_KEYS = frozenset(
         "discrepancy_count",
         "total_overcharge_minor",
         "open_disputes",
+        "recovered_total_minor",
+        "fee_total_minor",
+        "import_job_count",
         "compliance_rate",
         "compliance_rate_note",
     }
@@ -50,6 +53,9 @@ def test_reporting_summary_returns_expected_keys(
         discrepancy_count=3,
         total_overcharge_minor=12_50,
         open_disputes=1,
+        recovered_total_minor=500,
+        fee_total_minor=100,
+        import_job_count=2,
         compliance_rate=0.875,
         compliance_rate_note=None,
     )

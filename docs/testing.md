@@ -35,9 +35,12 @@ PYTHONPATH=apps/api pytest apps/api/tests -v
 | `test_matching.py` | Normalized tracking match; no match when either side missing. Integration: persisted shipment↔invoice link (skips without DB). |
 | `test_compliance.py` | Billed above allowed + absolute tolerance → discrepancy with reason code. Integration: persisted discrepancy row (skips without DB). |
 | `test_dispute_draft.py` | Dispute draft cites trace facts; draft-only (not sent). |
+| `test_negotiation.py` | Tiers (`draft` never sends, `approve_each` after approve, `autonomous` sends), platform pause, fee math. |
 | `test_ai_mapping.py` | Template mapping when AI disabled; `ai_runtime_enabled` gate on env + API keys. |
 | `test_ai_mapping_stub.py` | `map_columns` with stub client writes `ai_decision_requests` / `ai_decision_results`. |
-| `test_reporting_summary.py` | `GET /reporting/summary` returns dashboard KPI keys (`discrepancy_count`, `total_overcharge_minor`, `open_disputes`, `compliance_rate`, `compliance_rate_note`). |
+| `test_org_profile.py` | Profile GET/PATCH updates name, tolerances, autonomy; recovery fee stays platform-set. |
+| `test_partner_accounts.py` | Partner account list is scoped to that partner; detail 404s for another partner's org. |
+| `test_reporting_summary.py` | `GET /reporting/summary` returns dashboard KPI keys (`discrepancy_count`, `total_overcharge_minor`, `open_disputes`, `recovered_total_minor`, `fee_total_minor`, `import_job_count`, `compliance_rate`, `compliance_rate_note`). |
 
 Golden fixtures live in `apps/api/tests/fixtures/`:
 
@@ -74,7 +77,12 @@ pnpm dev   # should listen on http://127.0.0.1:43123
 pnpm exec playwright test
 ```
 
-Smoke spec: `apps/web/e2e/smoke.spec.ts` — home or onboarding loads.
+E2e specs:
+
+- `apps/web/e2e/smoke.spec.ts` — home or onboarding loads.
+- `apps/web/e2e/pages.spec.ts` — dashboard, imports, discrepancies, account, partner flows (sets demo org in `localStorage`).
+
+API coverage gate: `pytest --cov=app --cov-fail-under=85` (see `apps/api/pyproject.toml`).
 
 CI runs API pytest on every push/PR. The Playwright job runs only when `apps/web/package.json` is present; it does not start a dev server in CI yet (job may report soft failures until wired).
 

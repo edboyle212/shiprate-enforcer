@@ -8,9 +8,33 @@ import os
 from pathlib import Path
 from typing import Any, Callable
 
+import uuid
+
 import pytest
+from unittest.mock import AsyncMock
 
 FIXTURES_DIR = Path(__file__).resolve().parent / "fixtures"
+
+ORG_ID = uuid.UUID("01950000-0000-7000-8000-000000000001")
+ORG_HEADER = {"X-Organization-Id": str(ORG_ID)}
+
+
+@pytest.fixture
+def api_client():
+    from app.db import get_db
+    from app.main import app
+
+    session = AsyncMock()
+
+    async def _fake_db():
+        yield session
+
+    app.dependency_overrides[get_db] = _fake_db
+    from fastapi.testclient import TestClient
+
+    client = TestClient(app)
+    yield client, session
+    app.dependency_overrides.clear()
 
 
 def load_json_fixture(name: str) -> dict[str, Any]:

@@ -4,9 +4,11 @@ from datetime import datetime
 
 from sqlalchemy import (
     BigInteger,
+    Boolean,
     DateTime,
     Enum,
     ForeignKey,
+    Integer,
     String,
     Text,
     UniqueConstraint,
@@ -292,12 +294,33 @@ class DiscrepancyReviewStatus(str, enum.Enum):
 
 class DisputeCaseStatus(str, enum.Enum):
     open = "open"
+    awaiting_approval = "awaiting_approval"
+    awaiting_carrier = "awaiting_carrier"
+    awaiting_platform = "awaiting_platform"
+    credited = "credited"
     closed = "closed"
 
 
 class DisputeDraftStatus(str, enum.Enum):
     draft = "draft"
     approved = "approved"
+
+
+class AutonomyTier(str, enum.Enum):
+    draft = "draft"
+    approve_each = "approve_each"
+    autonomous = "autonomous"
+
+
+class DisputeMessageDirection(str, enum.Enum):
+    outbound = "outbound"
+    inbound = "inbound"
+
+
+class DisputeMessageStatus(str, enum.Enum):
+    draft = "draft"
+    approved = "approved"
+    sent = "sent"
 
 
 class CompliancePolicy(Base):
@@ -429,11 +452,16 @@ class DisputeCase(Base):
     status: Mapped[DisputeCaseStatus] = mapped_column(
         Enum(DisputeCaseStatus, name="dispute_case_status"), nullable=False, default=DisputeCaseStatus.open
     )
+    autonomy_tier: Mapped[str] = mapped_column(String(32), nullable=False, default=AutonomyTier.draft.value)
+    fee_bps: Mapped[int] = mapped_column(Integer, nullable=False, default=2000)
+    recovered_amount_minor: Mapped[int | None] = mapped_column(BigInteger, nullable=True)
+    fee_amount_minor: Mapped[int | None] = mapped_column(BigInteger, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     discrepancy: Mapped["Discrepancy"] = relationship(back_populates="dispute_case")
     events: Mapped[list["DisputeCaseEvent"]] = relationship(back_populates="dispute_case")
     drafts: Mapped[list["DisputeDraft"]] = relationship(back_populates="dispute_case")
+    messages: Mapped[list["DisputeMessage"]] = relationship(back_populates="dispute_case")
 
 
 class DisputeCaseEvent(Base):
@@ -472,6 +500,35 @@ class DisputeDraft(Base):
     approved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
     dispute_case: Mapped["DisputeCase"] = relationship(back_populates="drafts")
+
+
+class DisputeMessage(Base):
+    __tablename__ = "dispute_messages"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    organization_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("organizations.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    dispute_case_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("dispute_cases.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    direction: Mapped[DisputeMessageDirection] = mapped_column(
+        Enum(DisputeMessageDirection, name="dispute_message_direction"), nullable=False
+    )
+    email_subject: Mapped[str] = mapped_column(String(512), nullable=False)
+    email_body: Mapped[str] = mapped_column(Text, nullable=False)
+    status: Mapped[DisputeMessageStatus] = mapped_column(
+        Enum(DisputeMessageStatus, name="dispute_message_status"),
+        nullable=False,
+        default=DisputeMessageStatus.draft,
+    )
+    round_number: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+    offered_amount_minor: Mapped[int | None] = mapped_column(BigInteger, nullable=True)
+    denied: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    sent_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+    dispute_case: Mapped["DisputeCase"] = relationship(back_populates="messages")
 
 
 class AiFeatureFlag(Base):

@@ -3,97 +3,118 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
-import { getReportingSummary, type ReportingSummary } from "@/lib/api";
+import { ClientShell } from "@/app/components/client-shell";
+import { getOrganizationProfile, getReportingSummary, type OrganizationProfile, type ReportingSummary } from "@/lib/api";
 
-const DEMO_ORG_KEY = "shiprate_demo_org_id";
+function formatMoney(minor: number) {
+  return `$${(minor / 100).toFixed(2)}`;
+}
 
-export default function DashboardPage() {
-  const [orgId, setOrgId] = useState("");
+function DashboardBody({ orgId }: { orgId: string }) {
   const [summary, setSummary] = useState<ReportingSummary | null>(null);
+  const [profile, setProfile] = useState<OrganizationProfile | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const stored = window.localStorage.getItem(DEMO_ORG_KEY);
-    if (stored) setOrgId(stored);
-  }, []);
+    let cancelled = false;
+    Promise.all([getReportingSummary(orgId), getOrganizationProfile(orgId)])
+      .then(([s, p]) => {
+        if (cancelled) return;
+        setSummary(s);
+        setProfile(p);
+      })
+      .catch((e) => {
+        if (!cancelled) setError(e instanceof Error ? e.message : "Failed to load dashboard");
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [orgId]);
 
-  async function load() {
-    if (!orgId) {
-      setError("Set organization ID (create one on Imports).");
-      return;
-    }
-    setError(null);
-    try {
-      window.localStorage.setItem(DEMO_ORG_KEY, orgId);
-      const data = await getReportingSummary(orgId);
-      setSummary(data);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to load dashboard");
-    }
-  }
-
-  function formatMoney(minor: number) {
-    return `$${(minor / 100).toFixed(2)}`;
-  }
+  const wizardHref = `/p/${profile?.partner_id ?? "jasci"}/onboarding?org=${orgId}`;
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-50">
-      <header className="border-b border-slate-800 px-6 py-5">
-        <Link href="/" className="text-sm text-slate-400 hover:text-slate-200">
-          ← Home
-        </Link>
-        <h1 className="mt-2 text-2xl font-semibold">Dashboard</h1>
-        <p className="text-sm text-slate-400">KPIs from deterministic compliance and dispute cases.</p>
-      </header>
-      <main className="mx-auto max-w-4xl px-6 py-8">
-        <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-end">
-          <label className="flex-1 text-sm">
-            Organization ID
-            <input
-              className="mt-1 w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 font-mono text-xs"
-              value={orgId}
-              onChange={(e) => setOrgId(e.target.value)}
-            />
-          </label>
-          <button
-            type="button"
-            onClick={() => void load()}
-            className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium"
-          >
-            Refresh
-          </button>
+    <main className="mx-auto max-w-4xl px-6 py-8">
+      {error && <p className="mb-4 text-sm text-red-400">{error}</p>}
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <Kpi label="Discrepancies" value={summary ? String(summary.discrepancy_count) : "0"} />
+        <Kpi
+          label="Total overcharge"
+          value={summary ? formatMoney(summary.total_overcharge_minor) : "$0.00"}
+          accent
+        />
+        <Kpi label="Open disputes" value={summary ? String(summary.open_disputes) : "0"} />
+        <div className="rounded-xl border border-slate-800 bg-slate-900 p-5">
+          <p className="text-xs uppercase text-slate-500">Compliance rate</p>
+          <p className="mt-2 text-3xl font-semibold">
+            {summary?.compliance_rate != null ? `${(summary.compliance_rate * 100).toFixed(1)}%` : "—"}
+          </p>
+          {summary?.compliance_rate_note && (
+            <p className="mt-2 text-xs text-slate-500">{summary.compliance_rate_note}</p>
+          )}
         </div>
-        {error && <p className="mb-4 text-sm text-red-400">{error}</p>}
-        {summary && (
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="rounded-xl border border-slate-800 bg-slate-900 p-5">
-              <p className="text-xs uppercase text-slate-500">Discrepancies</p>
-              <p className="mt-2 text-3xl font-semibold">{summary.discrepancy_count}</p>
-            </div>
-            <div className="rounded-xl border border-slate-800 bg-slate-900 p-5">
-              <p className="text-xs uppercase text-slate-500">Total overcharge</p>
-              <p className="mt-2 text-3xl font-semibold text-amber-300">
-                {formatMoney(summary.total_overcharge_minor)}
-              </p>
-            </div>
-            <div className="rounded-xl border border-slate-800 bg-slate-900 p-5">
-              <p className="text-xs uppercase text-slate-500">Open disputes</p>
-              <p className="mt-2 text-3xl font-semibold">{summary.open_disputes}</p>
-            </div>
-            <div className="rounded-xl border border-slate-800 bg-slate-900 p-5">
-              <p className="text-xs uppercase text-slate-500">Compliance rate</p>
-              <p className="mt-2 text-3xl font-semibold">
-                {summary.compliance_rate != null
-                  ? `${(summary.compliance_rate * 100).toFixed(1)}%`
-                  : "—"}
-              </p>
-              {summary.compliance_rate_note && (
-                <p className="mt-2 text-xs text-slate-500">{summary.compliance_rate_note}</p>
-              )}
-            </div>
-          </div>
-        )}
-      </main>
+        <Kpi label="Recovered" value={summary ? formatMoney(summary.recovered_total_minor) : "$0.00"} />
+        <Kpi label="Fee" value={summary ? formatMoney(summary.fee_total_minor) : "$0.00"} />
+      </div>
+
+      <section className="mt-8">
+        <h2 className="text-sm font-medium text-slate-300">Needs attention</h2>
+        <ul className="mt-3 space-y-2 text-sm text-slate-300">
+          {profile && !profile.setup_complete && (
+            <li>
+              Setup is unfinished.{" "}
+              <Link href="/account" className="text-emerald-400 underline">
+                Finish the account profile
+              </Link>{" "}
+              or{" "}
+              <Link href={wizardHref} className="text-emerald-400 underline">
+                continue the wizard
+              </Link>
+              .
+            </li>
+          )}
+          {(summary?.discrepancy_count ?? 0) > 0 && (
+            <li>
+              {summary?.discrepancy_count} discrepancies to review.{" "}
+              <Link href="/discrepancies" className="text-emerald-400 underline">
+                Open discrepancies
+              </Link>
+              .
+            </li>
+          )}
+          {(summary?.import_job_count ?? 0) === 0 && (
+            <li>
+              No files imported yet.{" "}
+              <Link href="/imports" className="text-emerald-400 underline">
+                Open import center
+              </Link>
+              .
+            </li>
+          )}
+          {profile?.setup_complete &&
+            (summary?.discrepancy_count ?? 0) === 0 &&
+            (summary?.import_job_count ?? 0) > 0 && (
+              <li className="text-slate-500">Nothing waiting. Compliance looks current.</li>
+            )}
+        </ul>
+      </section>
+    </main>
+  );
+}
+
+function Kpi({ label, value, accent }: { label: string; value: string; accent?: boolean }) {
+  return (
+    <div className="rounded-xl border border-slate-800 bg-slate-900 p-5">
+      <p className="text-xs uppercase text-slate-500">{label}</p>
+      <p className={`mt-2 text-3xl font-semibold ${accent ? "text-amber-300" : ""}`}>{value}</p>
     </div>
+  );
+}
+
+export default function DashboardPage() {
+  return (
+    <ClientShell title="Dashboard" subtitle="KPIs from deterministic compliance and dispute cases.">
+      {(orgId) => <DashboardBody orgId={orgId} />}
+    </ClientShell>
   );
 }

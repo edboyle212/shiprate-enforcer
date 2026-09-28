@@ -449,6 +449,7 @@ class ClientOnboardingPayload(BaseModel):
     export_method_override: str | None = None
     carriers: list[str] = Field(default_factory=list)
     tolerances: dict | None = None
+    completed_at: str | None = None
 
 
 @router.put("/organizations/{org_id}/client-onboarding")
@@ -471,7 +472,10 @@ async def save_client_onboarding(
 
         raise HTTPException(status_code=404, detail="Organization not found")
     settings = dict(org.settings_json or {})
-    settings["client_onboarding"] = body.model_dump(exclude_none=True)
+    payload = body.model_dump(exclude_none=True)
+    if not payload.get("completed_at"):
+        payload["completed_at"] = datetime.now(UTC).isoformat()
+    settings["client_onboarding"] = payload
     org.settings_json = settings
     await db.commit()
     return settings["client_onboarding"]

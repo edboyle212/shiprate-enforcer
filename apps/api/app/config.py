@@ -54,6 +54,11 @@ class Settings(BaseSettings):
     ai_grok_api_key: str | None = None
     ai_claude_api_key: str | None = None
 
+    # Dispute outbound mail (Resend) — platform sends so replies stay on your domain
+    resend_api_key: str | None = None
+    dispute_from_email: str | None = None
+    dispute_reply_to: str | None = None
+
 
 settings = Settings()
 

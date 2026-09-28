@@ -120,8 +120,74 @@ export type ReportingSummary = {
   discrepancy_count: number;
   total_overcharge_minor: number;
   open_disputes: number;
+  recovered_total_minor: number;
+  fee_total_minor: number;
+  import_job_count: number;
   compliance_rate: number | null;
   compliance_rate_note: string | null;
+};
+
+export type ProfilePerson = {
+  name: string;
+  email: string;
+  role: "owner" | "admin" | "billing" | "viewer";
+};
+
+export type OrganizationProfile = {
+  id: string;
+  name: string;
+  slug: string;
+  partner_id: string | null;
+  contacts: {
+    primary_name: string;
+    primary_email: string;
+    billing_email: string;
+    disputes_email: string;
+  };
+  people: ProfilePerson[];
+  carriers: string[];
+  tolerances: { absolute_minor: number; percent: number };
+  autonomy_tier: AutonomyTier;
+  carrier_billing_emails: Record<string, string>;
+  recovery_fee_bps: number;
+  setup_complete: boolean;
+};
+
+export type PartnerAccountRow = {
+  id: string;
+  name: string;
+  slug: string;
+  created_at: string | null;
+  setup_complete: boolean;
+};
+
+export type AutonomyTier = "draft" | "approve_each" | "autonomous";
+
+export type DisputeMessage = {
+  id: string;
+  direction: "outbound" | "inbound";
+  email_subject: string;
+  email_body: string;
+  status: string;
+  round_number: number;
+  offered_amount_minor: number | null;
+  denied: boolean;
+  created_at: string;
+  sent_at: string | null;
+};
+
+export type DisputeCaseDetail = {
+  id: string;
+  discrepancy_id: string;
+  claim_amount_minor: number;
+  currency_code: string;
+  status: string;
+  autonomy_tier: AutonomyTier;
+  fee_bps: number;
+  recovered_amount_minor: number | null;
+  fee_amount_minor: number | null;
+  created_at: string;
+  messages: DisputeMessage[];
 };
 
 export type ColumnMapping = Record<string, string>;
@@ -132,6 +198,54 @@ export async function getReportingSummary(organizationId: string) {
   });
   if (!res.ok) throw new Error(`Reporting summary failed ${res.status}`);
   return res.json() as Promise<ReportingSummary>;
+}
+
+export async function getOrganizationProfile(organizationId: string) {
+  const res = await fetch(`${API_BASE}/organizations/current/profile`, {
+    headers: { "X-Organization-Id": organizationId },
+  });
+  if (!res.ok) throw new Error(`Profile load failed ${res.status}`);
+  return res.json() as Promise<OrganizationProfile>;
+}
+
+export async function patchOrganizationProfile(
+  organizationId: string,
+  payload: Partial<{
+    name: string;
+    contacts: OrganizationProfile["contacts"];
+    people: ProfilePerson[];
+    carriers: string[];
+    tolerances: { absolute_minor: number; percent: number };
+    autonomy_tier: AutonomyTier;
+    carrier_billing_emails: Record<string, string>;
+  }>,
+) {
+  const res = await fetch(`${API_BASE}/organizations/current/profile`, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+      "X-Organization-Id": organizationId,
+    },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) throw new Error(`Profile save failed ${res.status}`);
+  return res.json() as Promise<OrganizationProfile>;
+}
+
+export async function listPartnerAccounts(partnerId: string) {
+  const res = await fetch(`${API_BASE}/partners/${partnerId}/accounts`);
+  if (!res.ok) throw new Error(`Account list failed ${res.status}`);
+  return res.json() as Promise<PartnerAccountRow[]>;
+}
+
+export async function createPartnerAccount(partnerId: string, name: string) {
+  const res = await fetch(`${API_BASE}/partners/${partnerId}/accounts`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ name }),
+  });
+  if (!res.ok) throw new Error(`Create account failed ${res.status}`);
+  return res.json() as Promise<PartnerAccountRow>;
 }
 
 export async function getDiscrepancy(organizationId: string, id: string) {
@@ -166,6 +280,134 @@ export async function openDisputeCase(organizationId: string, discrepancyId: str
     headers: { "X-Organization-Id": organizationId },
   });
   if (!res.ok) throw new Error(`Open dispute case failed ${res.status}`);
+  return res.json() as Promise<{ id: string }>;
+}
+
+export async function listDisputeCases(organizationId: string) {
+  const res = await fetch(`${API_BASE}/dispute-cases`, {
+    headers: { "X-Organization-Id": organizationId },
+  });
+  if (!res.ok) throw new Error(`List dispute cases failed ${res.status}`);
+  return res.json() as Promise<Array<{ id: string; discrepancy_id: string }>>;
+}
+
+export async function getDisputeCase(organizationId: string, caseId: string) {
+  const res = await fetch(`${API_BASE}/dispute-cases/${caseId}`, {
+    headers: { "X-Organization-Id": organizationId },
+  });
+  if (!res.ok) throw new Error(`Get dispute case failed ${res.status}`);
+  return res.json() as Promise<DisputeCaseDetail>;
+}
+
+export type OrganizationCurrent = {
+  id: string;
+  settings_json: {
+    autonomy_tier?: AutonomyTier;
+    carrier_billing_emails?: Record<string, string>;
+    recovery_fee_bps?: number;
+  };
+};
+
+export async function getCurrentOrganization(organizationId: string) {
+  const res = await fetch(`${API_BASE}/organizations/current`, {
+    headers: { "X-Organization-Id": organizationId },
+  });
+  if (!res.ok) throw new Error(`Get organization failed ${res.status}`);
+  return res.json() as Promise<OrganizationCurrent>;
+}
+
+export async function patchOrgAutonomy(organizationId: string, autonomy_tier: AutonomyTier) {
+  const res = await fetch(`${API_BASE}/organizations/current`, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+      "X-Organization-Id": organizationId,
+    },
+    body: JSON.stringify({ autonomy_tier }),
+  });
+  if (!res.ok) throw new Error(`Update autonomy failed ${res.status}`);
+  return res.json();
+}
+
+export async function negotiateDisputeCase(organizationId: string, caseId: string) {
+  const res = await fetch(`${API_BASE}/dispute-cases/${caseId}/negotiate`, {
+    method: "POST",
+    headers: { "X-Organization-Id": organizationId },
+  });
+  if (!res.ok) throw new Error(`Negotiate failed ${res.status}`);
+  return res.json();
+}
+
+export type OutboundMailStatus = {
+  configured: boolean;
+  from_address: string | null;
+};
+
+export async function getDisputeOutboundMail(organizationId: string) {
+  const res = await fetch(`${API_BASE}/dispute-cases/outbound-mail`, {
+    headers: { "X-Organization-Id": organizationId },
+  });
+  if (!res.ok) throw new Error(`Outbound mail status failed ${res.status}`);
+  return res.json() as Promise<OutboundMailStatus>;
+}
+
+export async function approveSendDispute(
+  organizationId: string,
+  caseId: string,
+  messageId?: string,
+) {
+  const res = await fetch(`${API_BASE}/dispute-cases/${caseId}/approve-send`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-Organization-Id": organizationId,
+    },
+    body: JSON.stringify(messageId ? { message_id: messageId } : {}),
+  });
+  if (!res.ok) throw new Error(`Approve send failed ${res.status}`);
+  return res.json();
+}
+
+export async function stopDisputeCase(organizationId: string, caseId: string) {
+  const res = await fetch(`${API_BASE}/dispute-cases/${caseId}/stop`, {
+    method: "POST",
+    headers: { "X-Organization-Id": organizationId },
+  });
+  if (!res.ok) throw new Error(`Stop case failed ${res.status}`);
+  return res.json();
+}
+
+export async function recordDisputeCredit(
+  organizationId: string,
+  caseId: string,
+  recovered_amount_minor: number,
+) {
+  const res = await fetch(`${API_BASE}/dispute-cases/${caseId}/record-credit`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-Organization-Id": organizationId,
+    },
+    body: JSON.stringify({ recovered_amount_minor }),
+  });
+  if (!res.ok) throw new Error(`Record credit failed ${res.status}`);
+  return res.json();
+}
+
+export async function postCarrierReply(
+  organizationId: string,
+  caseId: string,
+  payload: { subject: string; body: string; offered_amount_minor?: number; denied?: boolean },
+) {
+  const res = await fetch(`${API_BASE}/dispute-cases/${caseId}/replies`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-Organization-Id": organizationId,
+    },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) throw new Error(`Post reply failed ${res.status}`);
   return res.json();
 }
 

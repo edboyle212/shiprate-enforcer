@@ -7,9 +7,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.db import get_db, set_rls_organization
-from app.models import DisputeCase, DisputeCaseEvent, DisputeDraft, DisputeDraftStatus
+from app.models import DisputeCase, DisputeDraft, DisputeMessage
 from app.routers.imports import require_org_id
 from app.services import disputes as dispute_service
+from app.services import negotiation as negotiation_service
+from app.services.mail import outbound_mail_configured, outbound_mail_from_address
 
 router = APIRouter()
 
@@ -20,12 +22,17 @@ class DisputeCaseSummary(BaseModel):
     claim_amount_minor: int
     currency_code: str
     status: str
+    autonomy_tier: str
+    fee_bps: int
+    recovered_amount_minor: int | None = None
+    fee_amount_minor: int | None = None
     created_at: str
 
 
 class DisputeCaseDetail(DisputeCaseSummary):
     drafts: list["DisputeDraftOut"]
     events: list["DisputeCaseEventOut"]
+    messages: list["DisputeMessageOut"]
 
 
 class DisputeDraftOut(BaseModel):
@@ -44,6 +51,19 @@ class DisputeCaseEventOut(BaseModel):
     created_at: str
 
 
+class DisputeMessageOut(BaseModel):
+    id: UUID
+    direction: str
+    email_subject: str
+    email_body: str
+    status: str
+    round_number: int
+    offered_amount_minor: int | None = None
+    denied: bool = False
+    created_at: str
+    sent_at: str | None = None
+
+
 def _case_summary(row: DisputeCase) -> DisputeCaseSummary:
     return DisputeCaseSummary(
         id=row.id,
@@ -51,7 +71,26 @@ def _case_summary(row: DisputeCase) -> DisputeCaseSummary:
         claim_amount_minor=row.claim_amount_minor,
         currency_code=row.currency_code,
         status=row.status.value,
+        autonomy_tier=row.autonomy_tier,
+        fee_bps=row.fee_bps,
+        recovered_amount_minor=row.recovered_amount_minor,
+        fee_amount_minor=row.fee_amount_minor,
         created_at=row.created_at.isoformat(),
+    )
+
+
+def _message_out(m: DisputeMessage) -> DisputeMessageOut:
+    return DisputeMessageOut(
+        id=m.id,
+        direction=m.direction.value,
+        email_subject=m.email_subject,
+        email_body=m.email_body,
+        status=m.status.value,
+        round_number=m.round_number,
+        offered_amount_minor=m.offered_amount_minor,
+        denied=bool(m.denied),
+        created_at=m.created_at.isoformat() if m.created_at else "",
+        sent_at=m.sent_at.isoformat() if m.sent_at else None,
     )
 
 
@@ -92,6 +131,21 @@ async def list_dispute_cases(
     return [_case_summary(row) for row in rows]
 
 
+class OutboundMailStatus(BaseModel):
+    configured: bool
+    from_address: str | None = None
+
+
+@router.get("/dispute-cases/outbound-mail", response_model=OutboundMailStatus)
+async def dispute_outbound_mail_status(
+    org_id: UUID = Depends(require_org_id),
+) -> OutboundMailStatus:
+    return OutboundMailStatus(
+        configured=outbound_mail_configured(),
+        from_address=outbound_mail_from_address(),
+    )
+
+
 @router.get("/dispute-cases/{case_id}", response_model=DisputeCaseDetail)
 async def get_dispute_case(
     case_id: UUID,
@@ -102,12 +156,17 @@ async def get_dispute_case(
     row = await db.scalar(
         select(DisputeCase)
         .where(DisputeCase.id == case_id, DisputeCase.organization_id == org_id)
-        .options(selectinload(DisputeCase.drafts), selectinload(DisputeCase.events))
+        .options(
+            selectinload(DisputeCase.drafts),
+            selectinload(DisputeCase.events),
+            selectinload(DisputeCase.messages),
+        )
     )
     if not row:
         raise HTTPException(status_code=404, detail="Dispute case not found")
     drafts = sorted(row.drafts, key=lambda d: d.created_at, reverse=True)
     events = sorted(row.events, key=lambda e: e.created_at)
+    messages = sorted(row.messages, key=lambda m: m.created_at)
     return DisputeCaseDetail(
         **_case_summary(row).model_dump(),
         drafts=[
@@ -130,6 +189,7 @@ async def get_dispute_case(
             )
             for e in events
         ],
+        messages=[_message_out(m) for m in messages],
     )
 
 
@@ -205,3 +265,140 @@ async def approve_dispute_draft(
             approved_at=draft.approved_at.isoformat() if draft.approved_at else None,
         )
     )
+
+
+class NegotiateResponse(BaseModel):
+    case: DisputeCaseSummary
+
+
+@router.post("/dispute-cases/{case_id}/negotiate", response_model=NegotiateResponse)
+async def negotiate_dispute_case(
+    case_id: UUID,
+    db: AsyncSession = Depends(get_db),
+    org_id: UUID = Depends(require_org_id),
+) -> NegotiateResponse:
+    await set_rls_organization(db, org_id)
+    try:
+        case = await negotiation_service.run_negotiation_step(
+            db, organization_id=org_id, dispute_case_id=case_id
+        )
+    except ValueError as exc:
+        raise _negotiation_http(exc) from exc
+    await db.commit()
+    await db.refresh(case)
+    return NegotiateResponse(case=_case_summary(case))
+
+
+class ReplyRequest(BaseModel):
+    subject: str
+    body: str
+    offered_amount_minor: int | None = None
+    denied: bool = False
+
+
+@router.post("/dispute-cases/{case_id}/replies", response_model=DisputeMessageOut)
+async def post_carrier_reply(
+    case_id: UUID,
+    body: ReplyRequest,
+    db: AsyncSession = Depends(get_db),
+    org_id: UUID = Depends(require_org_id),
+) -> DisputeMessageOut:
+    await set_rls_organization(db, org_id)
+    try:
+        message = await negotiation_service.record_inbound_reply(
+            db,
+            organization_id=org_id,
+            dispute_case_id=case_id,
+            subject=body.subject,
+            body=body.body,
+            offered_amount_minor=body.offered_amount_minor,
+            denied=body.denied,
+        )
+    except ValueError as exc:
+        raise _negotiation_http(exc) from exc
+    await db.commit()
+    await db.refresh(message)
+    return _message_out(message)
+
+
+class ApproveSendRequest(BaseModel):
+    message_id: UUID | None = None
+
+
+@router.post("/dispute-cases/{case_id}/approve-send", response_model=DisputeMessageOut)
+async def approve_send_message(
+    case_id: UUID,
+    body: ApproveSendRequest | None = None,
+    db: AsyncSession = Depends(get_db),
+    org_id: UUID = Depends(require_org_id),
+) -> DisputeMessageOut:
+    await set_rls_organization(db, org_id)
+    message_id = body.message_id if body else None
+    try:
+        message = await negotiation_service.approve_and_send(
+            db, organization_id=org_id, dispute_case_id=case_id, message_id=message_id
+        )
+    except ValueError as exc:
+        raise _negotiation_http(exc) from exc
+    await db.commit()
+    await db.refresh(message)
+    return _message_out(message)
+
+
+@router.post("/dispute-cases/{case_id}/stop", response_model=NegotiateResponse)
+async def stop_dispute_case(
+    case_id: UUID,
+    db: AsyncSession = Depends(get_db),
+    org_id: UUID = Depends(require_org_id),
+) -> NegotiateResponse:
+    await set_rls_organization(db, org_id)
+    try:
+        case = await negotiation_service.stop_case(db, organization_id=org_id, dispute_case_id=case_id)
+    except ValueError as exc:
+        raise _negotiation_http(exc) from exc
+    await db.commit()
+    await db.refresh(case)
+    return NegotiateResponse(case=_case_summary(case))
+
+
+class RecordCreditRequest(BaseModel):
+    recovered_amount_minor: int
+
+
+@router.post("/dispute-cases/{case_id}/record-credit", response_model=NegotiateResponse)
+async def record_dispute_credit(
+    case_id: UUID,
+    body: RecordCreditRequest,
+    db: AsyncSession = Depends(get_db),
+    org_id: UUID = Depends(require_org_id),
+) -> NegotiateResponse:
+    await set_rls_organization(db, org_id)
+    try:
+        case = await negotiation_service.record_credit(
+            db,
+            organization_id=org_id,
+            dispute_case_id=case_id,
+            recovered_amount_minor=body.recovered_amount_minor,
+        )
+    except ValueError as exc:
+        raise _negotiation_http(exc) from exc
+    await db.commit()
+    await db.refresh(case)
+    return NegotiateResponse(case=_case_summary(case))
+
+
+def _negotiation_http(exc: ValueError) -> HTTPException:
+    code = str(exc)
+    mapping = {
+        "case_not_found": (404, "Dispute case not found"),
+        "message_not_found": (404, "Message not found"),
+        "case_terminal": (400, "Case is already closed or credited"),
+        "awaiting_platform": (400, "Case is waiting for platform credit entry"),
+        "nothing_to_negotiate": (400, "Nothing to negotiate"),
+        "invalid_recovered_amount": (400, "Recovered amount is invalid"),
+        "recovered_exceeds_claim": (400, "Recovered amount exceeds claim"),
+        "credit_incomplete": (400, "Credit is missing recovered amount or fee"),
+        "mail_delivery_failed": (502, "Carrier email could not be sent — check Resend configuration"),
+    }
+    status, detail = mapping.get(code, (400, code))
+    return HTTPException(status_code=status, detail=detail)

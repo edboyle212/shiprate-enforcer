@@ -17,7 +17,9 @@ from app.models import (
     DisputeCaseStatus,
     DisputeDraft,
     DisputeDraftStatus,
+    Organization,
 )
+from app.services.org_settings import autonomy_tier_from_settings, recovery_fee_bps_from_settings
 
 
 def format_money_minor(minor: int, currency: str) -> str:
@@ -76,12 +78,17 @@ async def open_dispute_case(
     if claim_amount_minor <= 0:
         raise ValueError("non_positive_claim")
 
+    org = await session.scalar(select(Organization).where(Organization.id == organization_id))
+    settings_json = dict(org.settings_json or {}) if org else {}
+
     case = DisputeCase(
         organization_id=organization_id,
         discrepancy_id=disc.id,
         claim_amount_minor=claim_amount_minor,
         currency_code=disc.currency_code,
         status=DisputeCaseStatus.open,
+        autonomy_tier=autonomy_tier_from_settings(settings_json),
+        fee_bps=recovery_fee_bps_from_settings(settings_json),
     )
     session.add(case)
     await session.flush()

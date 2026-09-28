@@ -79,6 +79,11 @@ export default function PartnerOnboardingPage() {
       <header className="border-b border-slate-800 px-6 py-4">
         <p className="text-sm text-slate-400">Partner admin</p>
         <h1 className="text-2xl font-semibold">Onboarding — {params.partnerId}</h1>
+        <p className="mt-2 text-sm">
+          <Link href={`/partner/${params.partnerId}/accounts`} className="text-emerald-400 hover:underline">
+            Client accounts
+          </Link>
+        </p>
       </header>
       <main className="mx-auto max-w-2xl px-6 py-10">
         <ol className="mb-8 flex flex-wrap gap-2 text-xs">
