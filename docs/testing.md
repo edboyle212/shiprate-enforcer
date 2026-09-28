@@ -2,6 +2,8 @@
 
 How to run Shiprate Enforcer tests locally and in CI.
 
+Before UAT, confirm git and migrations: [uat-checklist.md](./uat-checklist.md).
+
 ## Prerequisites
 
 - Python 3.12+ for API tests
