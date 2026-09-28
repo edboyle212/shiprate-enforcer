@@ -40,12 +40,14 @@ Dev server listens on [http://127.0.0.1:43123](http://127.0.0.1:43123).
 Routes:
 
 - Dashboard: `/dashboard`
+- Account profile: `/account`
 - Import center: `/imports`
 - Discrepancies: `/discrepancies` (detail: `/discrepancies/{id}`)
 - Partner wizard: `/partner/{partnerId}/onboarding`
+- Partner accounts: `/partner/{partnerId}/accounts`
 - Client wizard: `/p/{partnerSlug}/onboarding`
 
-Dispute drafts are **DRAFT only** — human approve, no auto-send. AI column mapping is assist-only (`SHIPRATE_AI_ENABLED=1` + provider keys); it never writes rate tables or monetary dispute decisions.
+Dispute mail is gated by the org **autonomy tier** (`draft`, `approve_each`, `autonomous`). Recovered credits record a platform fee (`recovery_fee_bps`). AI column mapping is assist-only (`SHIPRATE_AI_ENABLED=1` + provider keys); it never writes rate tables or monetary dispute decisions.
 
 ### API highlights (prefix `/api/v1`)
 
@@ -64,10 +66,21 @@ Dispute drafts are **DRAFT only** — human approve, no auto-send. AI column map
 | GET | `/dispute-cases/{id}` | Case detail, drafts, events |
 | POST | `/dispute-cases/{id}/draft` | Generate email draft from trace |
 | POST | `/dispute-cases/{id}/approve-draft` | Human approve draft (no send) |
+| POST | `/dispute-cases/{id}/negotiate` | One agent step (draft or send by tier) |
+| POST | `/dispute-cases/{id}/replies` | Post a carrier reply |
+| POST | `/dispute-cases/{id}/approve-send` | Send after approve (`approve_each`) |
+| POST | `/dispute-cases/{id}/stop` | Stop the case |
+| POST | `/dispute-cases/{id}/record-credit` | Platform records recovered amount + fee |
+| PATCH | `/organizations/current` | Client sets autonomy tier (not fee) |
+| GET/PATCH | `/organizations/current/profile` | Client account profile |
+| GET/POST | `/partners/{partner_id}/accounts` | Publisher client account list and create |
+| GET | `/partners/{partner_id}/accounts/{org_id}` | Publisher account profile + KPIs |
 | GET | `/reporting/summary` | Dashboard KPIs |
 | POST | `/ai/map-columns` | Proposed CSV column mapping (template or AI) |
 
 Dev tenancy header: `X-Organization-Id`.
+
+Dispute email (Resend), recovery fees, and operator steps: [docs/app-setup.md](docs/app-setup.md). Client onboarding: [docs/client-setup.md](docs/client-setup.md).
 
 ## Tests
 
@@ -81,6 +94,8 @@ Integration tests (import idempotency, rate-card immutability, RLS) need `DATABA
 
 ## Product docs
 
+- [App setup](docs/app-setup.md) — local stack, Resend, platform fees, operator checklist
+- [Client setup](docs/client-setup.md) — client onboarding, account profile, disputes
 - [MVP specification](docs/shiprate-mvp-spec.md)
 - [Partner variable sheet](docs/partner-variable-sheet.md)
 - [ETL drop contract](docs/etl-drop-contract.md)
