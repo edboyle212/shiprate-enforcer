@@ -10,7 +10,7 @@ DEFAULT_AUTONOMY_TIER = "draft"
 DEFAULT_RECOVERY_FEE_BPS = 2000
 DEFAULT_ABSOLUTE_TOLERANCE_MINOR = 500
 DEFAULT_PERCENT_TOLERANCE = 2.0
-CLIENT_SETTINGS_KEYS = frozenset({"autonomy_tier", "carrier_billing_emails"})
+CLIENT_SETTINGS_KEYS: frozenset[str] = frozenset()
 CONTACT_KEYS = ("primary_name", "primary_email", "billing_email", "disputes_email")
 
 
@@ -32,30 +32,16 @@ def recovery_fee_bps_from_settings(settings_json: dict[str, Any] | None) -> int:
     return value
 
 
-def carrier_billing_email(settings_json: dict[str, Any] | None, carrier_code: str | None) -> str:
-    emails = (settings_json or {}).get("carrier_billing_emails") or {}
-    if not isinstance(emails, dict):
-        return "carrier-billing@example.invalid"
-    if carrier_code:
-        found = emails.get(carrier_code) or emails.get(carrier_code.upper())
-        if isinstance(found, str) and found.strip():
-            return found.strip()
-    return "carrier-billing@example.invalid"
+def carrier_billing_email(settings_json: dict[str, Any] | None, carrier_code: str | None) -> str | None:
+    """Deprecated — use resolve_carrier_email(session, carrier_code)."""
+    return None
 
 
 def merge_client_settings(current: dict[str, Any] | None, patch: dict[str, Any]) -> dict[str, Any]:
     """Apply client-editable keys only. recovery_fee_bps is never taken from the client."""
     merged = dict(current or {})
-    if "autonomy_tier" in patch:
-        tier = patch["autonomy_tier"]
-        if tier not in VALID_AUTONOMY_TIERS:
-            raise ValueError("invalid_autonomy_tier")
-        merged["autonomy_tier"] = tier
-    if "carrier_billing_emails" in patch:
-        emails = patch["carrier_billing_emails"]
-        if emails is not None and not isinstance(emails, dict):
-            raise ValueError("invalid_carrier_billing_emails")
-        merged["carrier_billing_emails"] = emails or {}
+    for blocked in ("autonomy_tier", "carrier_billing_emails", "recovery_fee_bps"):
+        patch.pop(blocked, None)
     return merged
 
 
@@ -116,10 +102,8 @@ def apply_profile_patch(org: Any, patch: dict[str, Any]) -> Any:
         org.name = name.strip()
 
     client_patch: dict[str, Any] = {}
-    if patch.get("autonomy_tier") is not None:
-        client_patch["autonomy_tier"] = patch["autonomy_tier"]
-    if patch.get("carrier_billing_emails") is not None:
-        client_patch["carrier_billing_emails"] = patch["carrier_billing_emails"]
+    patch.pop("autonomy_tier", None)
+    patch.pop("carrier_billing_emails", None)
     if client_patch:
         settings = merge_client_settings(settings, client_patch)
 

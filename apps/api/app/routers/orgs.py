@@ -1,6 +1,6 @@
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Header, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -13,7 +13,8 @@ from app.services.org_settings import (
     merge_client_settings,
     profile_from_org,
 )
-from app.tenancy import get_organization_id
+from app.auth import require_org_id, require_platform_admin
+from app.auth.principal import Principal
 
 router = APIRouter()
 
@@ -82,8 +83,11 @@ class OrganizationProfilePatch(BaseModel):
 
 
 @router.post("/organizations", response_model=OrganizationOut)
-async def create_organization(body: OrganizationCreate, db: AsyncSession = Depends(get_db)) -> OrganizationOut:
-    """Dev bootstrap — creates org without auth."""
+async def create_organization(
+    body: OrganizationCreate,
+    db: AsyncSession = Depends(get_db),
+    _admin: Principal = Depends(require_platform_admin),
+) -> OrganizationOut:
     existing = await db.scalar(select(Organization).where(Organization.slug == body.slug))
     if existing:
         raise HTTPException(status_code=409, detail="Slug already exists")
@@ -101,10 +105,10 @@ async def create_organization(body: OrganizationCreate, db: AsyncSession = Depen
 
 
 @router.get("/organizations/current", response_model=OrganizationOut)
-async def get_current_organization(db: AsyncSession = Depends(get_db)) -> OrganizationOut:
-    org_id = get_organization_id()
-    if org_id is None:
-        raise HTTPException(status_code=400, detail="Missing organization context")
+async def get_current_organization(
+    db: AsyncSession = Depends(get_db),
+    org_id: UUID = Depends(require_org_id),
+) -> OrganizationOut:
     await set_rls_organization(db, org_id)
     org = await db.scalar(select(Organization).where(Organization.id == org_id))
     if not org:
@@ -128,10 +132,7 @@ def _org_out(org: Organization) -> OrganizationOut:
     )
 
 
-async def _require_current_org(db: AsyncSession) -> Organization:
-    org_id = get_organization_id()
-    if org_id is None:
-        raise HTTPException(status_code=400, detail="Missing organization context")
+async def _require_current_org(db: AsyncSession, org_id: UUID) -> Organization:
     await set_rls_organization(db, org_id)
     org = await db.scalar(select(Organization).where(Organization.id == org_id))
     if not org:
@@ -143,13 +144,11 @@ async def _require_current_org(db: AsyncSession) -> Organization:
 async def patch_current_organization(
     body: OrganizationClientPatch,
     db: AsyncSession = Depends(get_db),
+    org_id: UUID = Depends(require_org_id),
 ) -> OrganizationOut:
-    org = await _require_current_org(db)
+    org = await _require_current_org(db, org_id)
     patch: dict = {}
-    if body.autonomy_tier is not None:
-        patch["autonomy_tier"] = body.autonomy_tier
-    if body.carrier_billing_emails is not None:
-        patch["carrier_billing_emails"] = body.carrier_billing_emails
+    # autonomy_tier and carrier_billing_emails are platform-controlled (Phase 0)
     try:
         org.settings_json = merge_client_settings(org.settings_json or {}, patch)
     except ValueError as exc:
@@ -164,8 +163,11 @@ def _profile_out(org: Organization) -> OrganizationProfileOut:
 
 
 @router.get("/organizations/current/profile", response_model=OrganizationProfileOut)
-async def get_current_profile(db: AsyncSession = Depends(get_db)) -> OrganizationProfileOut:
-    org = await _require_current_org(db)
+async def get_current_profile(
+    db: AsyncSession = Depends(get_db),
+    org_id: UUID = Depends(require_org_id),
+) -> OrganizationProfileOut:
+    org = await _require_current_org(db, org_id)
     return _profile_out(org)
 
 
@@ -173,8 +175,9 @@ async def get_current_profile(db: AsyncSession = Depends(get_db)) -> Organizatio
 async def patch_current_profile(
     body: OrganizationProfilePatch,
     db: AsyncSession = Depends(get_db),
+    org_id: UUID = Depends(require_org_id),
 ) -> OrganizationProfileOut:
-    org = await _require_current_org(db)
+    org = await _require_current_org(db, org_id)
     payload = body.model_dump(exclude_none=True)
     payload.pop("recovery_fee_bps", None)
     try:
@@ -190,11 +193,10 @@ async def patch_current_profile(
 async def patch_recovery_fee(
     body: RecoveryFeePatch,
     db: AsyncSession = Depends(get_db),
-    x_platform_admin: str | None = Header(default=None, alias="X-Platform-Admin"),
+    org_id: UUID = Depends(require_org_id),
+    _admin: Principal = Depends(require_platform_admin),
 ) -> OrganizationOut:
-    if x_platform_admin != "1":
-        raise HTTPException(status_code=403, detail="Platform admin required")
-    org = await _require_current_org(db)
+    org = await _require_current_org(db, org_id)
     try:
         org.settings_json = apply_platform_recovery_fee(org.settings_json or {}, body.recovery_fee_bps)
     except ValueError as exc:

@@ -8,7 +8,8 @@ from sqlalchemy.orm import selectinload
 
 from app.db import get_db, set_rls_organization
 from app.models import DisputeCase, DisputeDraft, DisputeMessage
-from app.routers.imports import require_org_id
+from app.auth import require_org_id, require_platform_admin
+from app.auth.principal import Principal
 from app.services import disputes as dispute_service
 from app.services import negotiation as negotiation_service
 from app.services.mail import outbound_mail_configured, outbound_mail_from_address
@@ -302,6 +303,7 @@ async def post_carrier_reply(
     body: ReplyRequest,
     db: AsyncSession = Depends(get_db),
     org_id: UUID = Depends(require_org_id),
+    _admin: Principal = Depends(require_platform_admin),
 ) -> DisputeMessageOut:
     await set_rls_organization(db, org_id)
     try:
@@ -371,6 +373,7 @@ async def record_dispute_credit(
     body: RecordCreditRequest,
     db: AsyncSession = Depends(get_db),
     org_id: UUID = Depends(require_org_id),
+    _admin: Principal = Depends(require_platform_admin),
 ) -> NegotiateResponse:
     await set_rls_organization(db, org_id)
     try:
@@ -399,6 +402,8 @@ def _negotiation_http(exc: ValueError) -> HTTPException:
         "recovered_exceeds_claim": (400, "Recovered amount exceeds claim"),
         "credit_incomplete": (400, "Credit is missing recovered amount or fee"),
         "mail_delivery_failed": (502, "Carrier email could not be sent — check Resend configuration"),
+        "outbound_disabled": (503, "Outbound carrier email is disabled"),
+        "carrier_unresolved": (400, "No verified carrier contact for this dispute"),
     }
     status, detail = mapping.get(code, (400, code))
     return HTTPException(status_code=status, detail=detail)

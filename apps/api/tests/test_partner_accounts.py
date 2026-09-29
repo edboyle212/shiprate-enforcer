@@ -26,7 +26,10 @@ def api_client():
         yield AsyncMock()
 
     app.dependency_overrides[get_db] = _fake_db
+    from tests.db import admin_auth_headers
+
     client = TestClient(app)
+    client.headers.update(admin_auth_headers())
     yield client
     app.dependency_overrides.clear()
 

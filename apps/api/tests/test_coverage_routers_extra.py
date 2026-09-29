@@ -201,12 +201,17 @@ def test_partners_public_branding(_rls: AsyncMock, api_client: tuple[TestClient,
 
 
 @patch("app.routers.orgs.set_rls_organization", new_callable=AsyncMock)
-@patch("app.routers.orgs.get_organization_id", return_value=ORG_ID)
-def test_recovery_fee_requires_admin(_org: MagicMock, _rls: AsyncMock, api_client: tuple[TestClient, AsyncMock]):
+def test_recovery_fee_requires_admin(_rls: AsyncMock, api_client: tuple[TestClient, AsyncMock]):
+    from tests.db import auth_headers
+
     client, session = api_client
     org = Organization(id=ORG_ID, name="o", slug="o", settings_json={"recovery_fee_bps": 2000})
     session.scalar = AsyncMock(return_value=org)
-    res = client.patch(f"{PREFIX}/organizations/current/recovery-fee", json={"recovery_fee_bps": 1500})
+    res = client.patch(
+        f"{PREFIX}/organizations/current/recovery-fee",
+        headers=auth_headers(),
+        json={"recovery_fee_bps": 1500},
+    )
     assert res.status_code == 403
 
 

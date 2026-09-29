@@ -1,20 +1,30 @@
-# Connect Cursor Project to GitHub
+# GitHub sync hub (Local Mac ↔ Cloud)
 
-The cloud agent **cannot** click **Connect repository** in the Cursor UI — that binding is only in the desktop app.
+**Source of truth:** [`edboyle212/shiprate-enforcer`](https://github.com/edboyle212/shiprate-enforcer), branch **`main`**.
 
-## Do this once (≈30 seconds)
+| Surface | What to use |
+|---------|-------------|
+| **Mac** | Clone or `~/Projects/shiprate-enforcer`; `git pull` / `git push` **`origin`** (GitHub). |
+| **Cloud agents** | Remote **`github`** → same repo; after Mac pushes, `git fetch github && git merge github/main`. Always `git push origin` (Cursor Project mirror). |
+| **Cursor Project UI** | Optional: connect the Project to GitHub so new agents clone from GitHub instead of only the mirror. |
 
-1. Open **Cursor** → **Projects** → **Shiprate Enforcer** (this chat).
-2. Open **Project settings** (gear next to the project name, or **⋯** menu).
-3. Find **Repository** / **GitHub** / **Connect repository**.
-4. Choose **`edboyle212/shiprate-enforcer`**, branch **`main`**, confirm.
+You do **not** need github.com for day-to-day work — Terminal and agents are enough.
 
-If you don’t see it: **Cursor Settings → GitHub** and ensure GitHub is signed in, then retry step 3.
+## One-time: Cursor Project → GitHub (desktop)
 
-## Already done outside Cursor
+Cloud agents **cannot** click **Connect repository** in the UI.
 
-- GitHub: https://github.com/edboyle212/shiprate-enforcer (`main` @ `766151e`)
-- Mac clone: `~/Projects/shiprate-enforcer`
-- Cloud workspace remote **`github`** → same repo (push needs `GH_TOKEN` on cloud agents)
+1. Open **Cursor** → **Projects** → **Shiprate Enforcer**.
+2. **Project settings** → **Repository** / **GitHub** → **`edboyle212/shiprate-enforcer`**, branch **`main`**.
+3. **Cursor Settings → GitHub** — sign in if needed.
 
-After connecting in step 4, new cloud agents for this Project should use GitHub as the repo source of truth.
+## One-time: GitHub App access
+
+1. https://github.com/settings/installations → **Cursor** → allow **`shiprate-enforcer`**.
+2. https://cursor.com/dashboard/integrations → **Connect GitHub**.
+
+## Cloud push to GitHub
+
+Set **`GH_TOKEN`** (fine-grained PAT, Contents read/write) on the Project environment if agents should `git push github main`. Without it, Mac pushes and cloud pulls.
+
+See also: Project Context **`docs/github-sync-workflow.md`** (Edward workflow).

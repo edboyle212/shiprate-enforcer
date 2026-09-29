@@ -21,16 +21,10 @@ from app.models import (
     SourceFileKind,
 )
 from app.services.storage import sha256_hex, storage_service
-from app.tenancy import get_organization_id
+from app.auth import require_org_id, require_partner_access, require_platform_admin
+from app.auth.principal import Principal
 
 router = APIRouter()
-
-
-def require_org_id() -> UUID:
-    org_id = get_organization_id()
-    if org_id is None:
-        raise HTTPException(status_code=400, detail="Missing organization context (X-Organization-Id)")
-    return org_id
 
 
 class SourceFileOut(BaseModel):
@@ -355,6 +349,7 @@ async def approve_rate_card(
     rate_card_id: UUID,
     db: AsyncSession = Depends(get_db),
     org_id: UUID = Depends(require_org_id),
+    _admin: Principal = Depends(require_platform_admin),
 ) -> RateCardOut:
     await set_rls_organization(db, org_id)
     rc = await db.scalar(
@@ -404,6 +399,7 @@ async def get_partner_onboarding(
     partner_id: str,
     db: AsyncSession = Depends(get_db),
     org_id: UUID = Depends(require_org_id),
+    _partner: str = Depends(require_partner_access),
 ) -> dict:
     from app.services.partner_profiles import get_partner_profile
 
@@ -416,6 +412,7 @@ async def save_partner_onboarding(
     body: PartnerOnboardingPayload,
     db: AsyncSession = Depends(get_db),
     org_id: UUID = Depends(require_org_id),
+    _partner: str = Depends(require_partner_access),
 ) -> dict:
     from app.services.partner_profiles import upsert_partner_profile
 

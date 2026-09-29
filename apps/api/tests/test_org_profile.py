@@ -50,7 +50,7 @@ def test_apply_profile_patch_updates_name_tolerances_autonomy_leaves_fee():
     assert org.name == "New Co"
     assert profile["tolerances"]["absolute_minor"] == 250
     assert profile["tolerances"]["percent"] == 1.5
-    assert profile["autonomy_tier"] == "approve_each"
+    assert profile["autonomy_tier"] == "draft"
     assert profile["recovery_fee_bps"] == 2000
     assert profile["carriers"] == ["UPS", "FedEx"]
     assert profile["contacts"]["primary_email"] == "pat@new.co"
@@ -95,10 +95,11 @@ def test_profile_patch_route_strips_fee(mock_rls: AsyncMock, api_client: TestCli
 
     app.dependency_overrides[get_db] = _db
     prefix = settings.api_prefix.rstrip("/")
-    with patch.object(orgs_router, "get_organization_id", return_value=ORG_ID):
-        response = api_client.patch(
+    from tests.db import admin_auth_headers
+
+    response = api_client.patch(
             f"{prefix}/organizations/current/profile",
-            headers={"X-Organization-Id": str(ORG_ID)},
+            headers=admin_auth_headers(),
             json={
                 "name": "Acme Logistics",
                 "tolerances": {"absolute_minor": 100, "percent": 3},
@@ -110,7 +111,7 @@ def test_profile_patch_route_strips_fee(mock_rls: AsyncMock, api_client: TestCli
     body = response.json()
     assert body["name"] == "Acme Logistics"
     assert body["tolerances"]["absolute_minor"] == 100
-    assert body["autonomy_tier"] == "approve_each"
+    assert body["autonomy_tier"] == "draft"
     assert body["recovery_fee_bps"] == 2000
     app.dependency_overrides.clear()
 
@@ -143,10 +144,11 @@ def test_profile_get_includes_setup_complete(_mock_rls: AsyncMock, api_client: T
 
     app.dependency_overrides[get_db] = _db
     prefix = settings.api_prefix.rstrip("/")
-    with patch.object(orgs_router, "get_organization_id", return_value=ORG_ID):
-        response = api_client.get(
+    from tests.db import admin_auth_headers
+
+    response = api_client.get(
             f"{prefix}/organizations/current/profile",
-            headers={"X-Organization-Id": str(ORG_ID)},
+            headers=admin_auth_headers(),
         )
     assert response.status_code == 200
     assert response.json()["setup_complete"] is True

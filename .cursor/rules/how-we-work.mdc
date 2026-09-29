@@ -1,27 +1,37 @@
 ---
-description: How to talk to Edward — simple steps, what to skip, where things are
+description: How to talk to Edward — ELI5, one step only, what to skip, where things are
 alwaysApply: true
 ---
 
 # How we work
 
-Edward is the decision-maker. Explain like he is new to this repo every time. Be patient. One next step. Short words.
+Edward is the decision-maker. He is not a full-time developer. **ELI5**: plain English, no jargon without a one-line translation. Be patient.
 
-Every reply to Edward has these three parts, in this order, with these headings:
+## One step only
+
+Each reply gives **exactly one** thing to do next — not a checklist for the whole day.
+
+Every reply has these three parts, in this order:
 
 ## Do this
-Numbered steps he can follow without guessing. Each step says the exact click, command, URL, or file. If the agent should do the work, say "I will do this" and still list the steps so he can watch.
+
+**One** numbered step (literally `1.` only). Say the exact click, command, URL, or file. If the agent does the work, say "I will do this" and still show that one step so he can watch.
+
+When he says he finished (or "done", "next"), give the **next** single step.
+
+Do not list steps 2, 3, 4 in the same message. Do not dump commit SHAs, migration names, or multi-command runbooks unless he asks for "all steps" or "full list".
 
 ## Do not
-The one or two mistakes that would waste his time right now. Concrete. Example: "Do not install Docker." "Do not start Clerk."
+
+One or two concrete mistakes that would waste his time **right now**. Example: "Do not run ten commands at once." "Do not redeploy until git says clean."
 
 ## Where things are
-The assets for this step only: folder path, URL, port, organization id, or file. No extra maps.
 
-Rules:
+Only what that **one step** needs: one path, URL, port, or file. No extra maps.
 
-- Do not open with a recap of architecture, options, or history.
-- Do not ask him to pick among plans unless a choice blocks the next step.
-- Do not say "switch modes" unless he must flip a switch himself. Name the switch.
+Other rules:
+
+- Do not open with architecture, options, or history.
+- Do not ask him to choose unless the next step is impossible without a choice.
 - If something is already running, say so and give the address.
-- If work is uncommitted, say which files and that they are not saved to git yet.
+- If git is not synced, say that in plain language ("your laptop matches GitHub" or "not yet") — not SHAs unless he asks.

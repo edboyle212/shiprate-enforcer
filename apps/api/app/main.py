@@ -1,11 +1,17 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.config import settings
-from app.middleware.tenancy import TenancyMiddleware
+from app.config import allow_dev_tenant_header, settings
+from app.middleware.auth import AuthMiddleware
 from app.routers import ai, compliance, disputes, etl, health, imports, matching, orgs, partners, rating, reporting
 
 app = FastAPI(title="Shiprate Enforcer API", version="0.1.0")
+
+
+@app.on_event("startup")
+def _validate_security_config() -> None:
+    if settings.env == "production" and allow_dev_tenant_header():
+        raise RuntimeError("ALLOW_DEV_TENANT_HEADER must not be set in production")
 
 app.add_middleware(
     CORSMiddleware,
@@ -14,7 +20,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-app.add_middleware(TenancyMiddleware)
+app.add_middleware(AuthMiddleware)
 
 prefix = settings.api_prefix
 app.include_router(health.router, prefix=prefix, tags=["health"])

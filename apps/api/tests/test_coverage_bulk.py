@@ -29,6 +29,7 @@ from app.services.compliance import list_discrepancies, run_compliance_for_invoi
 from app.services.matching import get_match_for_invoice_line, persist_tracking_match
 from app.services import import_jobs as import_jobs_service
 from tests.conftest import ORG_HEADER, ORG_ID
+from tests.db import admin_auth_headers
 
 PREFIX = settings.api_prefix.rstrip("/")
 
@@ -164,7 +165,7 @@ def test_post_carrier_reply(_rls: AsyncMock, mock_reply: AsyncMock, api_client: 
     session.refresh = AsyncMock()
     res = client.post(
         f"{PREFIX}/dispute-cases/{uuid.uuid4()}/replies",
-        headers=ORG_HEADER,
+        headers={**ORG_HEADER, **admin_auth_headers()},
         json={"subject": "s", "body": "b"},
     )
     assert res.status_code == 200
@@ -224,7 +225,7 @@ def test_partner_profile_put(_rls: AsyncMock, api_client: tuple[TestClient, Asyn
     session.refresh = AsyncMock()
     res = client.put(
         f"{PREFIX}/partners/jasci/profile",
-        headers=ORG_HEADER,
+        headers={**ORG_HEADER, **admin_auth_headers()},
         json={"partner_name": "Jasci", "notes": "hi"},
     )
     assert res.status_code == 200

@@ -32,6 +32,15 @@ from app.services.org_settings import apply_platform_recovery_fee, merge_client_
 ORG_ID = uuid.UUID("01950000-0000-7000-8000-000000000001")
 
 
+@pytest.fixture(autouse=True)
+def _enable_outbound_carrier_send(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(settings, "outbound_carrier_send_enabled", True)
+    monkeypatch.setattr(
+        "app.services.negotiation.outbound_mail_configured",
+        lambda: True,
+    )
+
+
 def _discrepancy() -> Discrepancy:
     return Discrepancy(
         id=uuid.uuid4(),
@@ -84,7 +93,7 @@ def test_fee_amount_is_integer_bps():
 def test_client_patch_cannot_change_recovery_fee():
     current = {"recovery_fee_bps": 2000, "autonomy_tier": "draft"}
     merged = merge_client_settings(current, {"autonomy_tier": "autonomous", "recovery_fee_bps": 1})
-    assert merged["autonomy_tier"] == "autonomous"
+    assert merged["autonomy_tier"] == "draft"
     assert merged["recovery_fee_bps"] == 2000
 
 
@@ -247,13 +256,14 @@ def test_client_patch_route_strips_fee(mock_rls: AsyncMock, api_client: TestClie
 
     app.dependency_overrides[get_db] = _db
     prefix = settings.api_prefix.rstrip("/")
-    with patch.object(orgs_router, "get_organization_id", return_value=ORG_ID):
-        response = api_client.patch(
+    from tests.db import admin_auth_headers
+
+    response = api_client.patch(
             f"{prefix}/organizations/current",
-            headers={"X-Organization-Id": str(ORG_ID)},
+            headers=admin_auth_headers(),
             json={"autonomy_tier": "approve_each", "recovery_fee_bps": 1},
         )
     assert response.status_code == 200
     assert response.json()["settings_json"]["recovery_fee_bps"] == 2000
-    assert response.json()["settings_json"]["autonomy_tier"] == "approve_each"
+    assert response.json()["settings_json"].get("autonomy_tier", "draft") == "draft"
     app.dependency_overrides.clear()

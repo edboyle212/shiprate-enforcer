@@ -32,10 +32,16 @@ class Settings(BaseSettings):
     database_url: str = _default_async_url()
     sync_database_url: str = _default_sync_url()
 
-    # Clerk stub — wire CLERK_SECRET_KEY in production
+    # local | test | staging | production
+    env: str = os.environ.get("ENV", "local").lower()
+
+    # Clerk — production auth
     clerk_secret_key: str | None = None
     clerk_jwt_issuer: str | None = None
     dev_tenant_header: str = "X-Organization-Id"
+    dev_bootstrap_user_external_id: str = "dev-bootstrap-user"
+
+    outbound_carrier_send_enabled: bool = False
 
     # Object storage: MinIO when configured, else local filesystem
     s3_endpoint_url: str | None = None
@@ -61,6 +67,22 @@ class Settings(BaseSettings):
 
 
 settings = Settings()
+
+
+def allow_dev_tenant_header() -> bool:
+    if settings.env == "production":
+        return False
+    raw = os.environ.get("ALLOW_DEV_TENANT_HEADER", "")
+    return raw.lower() in ("1", "true", "yes")
+
+
+def allow_test_bearer() -> bool:
+    if settings.env == "production":
+        return False
+    if settings.env in ("test", "local"):
+        raw = os.environ.get("SHIPRATE_ALLOW_TEST_BEARER", "1")
+        return raw.lower() not in ("0", "false", "no")
+    return False
 
 
 def ai_enabled_globally() -> bool:

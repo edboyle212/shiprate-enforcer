@@ -144,7 +144,7 @@ def build_rating_request(shipment: Shipment, rate_card: RateCardVersion) -> dict
     }
 
 
-def trace_summary(trace: dict) -> dict:
+def trace_summary(trace: dict, *, carrier_code: str | None = None) -> dict:
     rules = trace.get("rules_evaluated") or {}
     return {
         "engine_version": trace.get("engine_version"),
@@ -153,7 +153,20 @@ def trace_summary(trace: dict) -> dict:
         "minimum_charge_applied": trace.get("minimum_charge_applied"),
         "table_key": rules.get("table_key"),
         "allowed_total_minor": trace.get("allowed_total_minor"),
+        "carrier_code": carrier_code,
     }
+
+
+def unrated_reason_for_shipment(shipment: Shipment) -> str | None:
+    if not shipment.service_code:
+        return "missing_service"
+    if shipment.weight_oz is None or int(shipment.weight_oz) <= 0:
+        return "missing_weight"
+    if not (shipment.dest_postal or "").strip():
+        return "missing_dest"
+    if not shipment.carrier_code:
+        return "missing_carrier"
+    return None
 
 
 def _sync_set_org(session: Session, organization_id: uuid.UUID) -> None:
@@ -164,6 +177,7 @@ def _sync_set_org(session: Session, organization_id: uuid.UUID) -> None:
 
 
 def _ensure_organization(session: Session, organization_id: uuid.UUID) -> None:
+    _sync_set_org(session, organization_id)
     if session.get(Organization, organization_id) is None:
         slug = f"org-{organization_id.hex}"
         session.add(Organization(id=organization_id, name=slug, slug=slug))
@@ -378,6 +392,9 @@ async def run_compliance_for_matches(
         if not shipment or not line:
             continue
 
+        if unrated_reason_for_shipment(shipment):
+            continue
+
         rate_card = await _resolve_rate_card(session, organization_id, shipment.carrier_code)
         if not rate_card:
             continue
@@ -417,7 +434,8 @@ async def run_compliance_for_matches(
             allowed_amount_minor=allowed,
             variance_minor=variance,
             currency_code=line.currency_code,
-            trace_summary_json=trace_summary(trace),
+            trace_summary_json=trace_summary(trace, carrier_code=shipment.carrier_code),
+            carrier_code=shipment.carrier_code,
         )
         session.add(disc)
         discrepancies_created += 1

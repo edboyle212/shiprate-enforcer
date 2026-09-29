@@ -5,7 +5,7 @@ from __future__ import annotations
 import uuid
 from typing import Any
 
-from sqlalchemy import func, select
+from sqlalchemy import func, select, text
 from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy import create_engine
 
@@ -14,6 +14,10 @@ from app.models import ImportJob, ImportJobStatus, Organization, SourceFile, Sou
 
 
 def _ensure_organization(session: Session, organization_id: uuid.UUID) -> None:
+    session.execute(
+        text("SELECT set_config('app.organization_id', :org_id, true)"),
+        {"org_id": str(organization_id)},
+    )
     if session.get(Organization, organization_id) is None:
         slug = f"org-{organization_id.hex}"
         session.add(Organization(id=organization_id, name=slug, slug=slug))
@@ -82,6 +86,10 @@ def create_import_job(
 
 def count_import_jobs(*, organization_id: uuid.UUID, idempotency_key: str) -> int:
     with SessionLocal() as session:
+        session.execute(
+            text("SELECT set_config('app.organization_id', :org_id, true)"),
+            {"org_id": str(organization_id)},
+        )
         count = session.scalar(
             select(func.count())
             .select_from(ImportJob)

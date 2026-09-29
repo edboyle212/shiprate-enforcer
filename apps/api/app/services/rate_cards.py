@@ -6,7 +6,7 @@ import uuid
 from datetime import UTC, datetime
 from typing import Any
 
-from sqlalchemy import create_engine, select
+from sqlalchemy import create_engine, select, text
 from sqlalchemy.orm import sessionmaker
 
 from app.config import settings
@@ -14,6 +14,10 @@ from app.models import Organization, RateCardVersion, RateCardVersionStatus
 
 
 def _ensure_organization(session, organization_id: uuid.UUID) -> None:
+    session.execute(
+        text("SELECT set_config('app.organization_id', :org_id, true)"),
+        {"org_id": str(organization_id)},
+    )
     if session.get(Organization, organization_id) is None:
         slug = f"org-{organization_id.hex}"
         session.add(Organization(id=organization_id, name=slug, slug=slug))
@@ -34,6 +38,7 @@ def _row_to_dict(row: RateCardVersion) -> dict[str, Any]:
 
 def get_rate_card_version(*, organization_id: uuid.UUID, rate_card_version_id: uuid.UUID) -> dict[str, Any]:
     with SessionLocal() as session:
+        _ensure_organization(session, organization_id)
         row = session.scalar(
             select(RateCardVersion).where(
                 RateCardVersion.id == rate_card_version_id,
@@ -88,6 +93,7 @@ def update_rate_card_version_rules(
 ) -> None:
     with SessionLocal() as session:
         with session.begin():
+            _ensure_organization(session, organization_id)
             row = session.scalar(
                 select(RateCardVersion).where(
                     RateCardVersion.id == rate_card_version_id,

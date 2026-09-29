@@ -71,6 +71,42 @@ class OrganizationMembership(Base):
     user: Mapped["User"] = relationship(back_populates="memberships")
 
 
+class PlatformAdmin(Base):
+    __tablename__ = "platform_admins"
+
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), primary_key=True
+    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class PartnerMembership(Base):
+    __tablename__ = "partner_memberships"
+    __table_args__ = (UniqueConstraint("partner_id", "user_id", name="uq_partner_user"),)
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    partner_id: Mapped[str] = mapped_column(String(64), ForeignKey("wms_partners.partner_id", ondelete="CASCADE"), nullable=False)
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False
+    )
+    role: Mapped[str] = mapped_column(String(32), nullable=False, default="admin")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class CarrierContact(Base):
+    __tablename__ = "carrier_contacts"
+    __table_args__ = (UniqueConstraint("carrier_code", "channel", name="uq_carrier_contact_channel"),)
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    carrier_code: Mapped[str] = mapped_column(String(32), nullable=False)
+    channel: Mapped[str] = mapped_column(String(32), nullable=False)
+    address: Mapped[str] = mapped_column(String(512), nullable=False)
+    verified_by_user_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True
+    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
 class SourceFileKind(str, enum.Enum):
     shipment_export = "shipment_export"
     carrier_invoice = "carrier_invoice"
@@ -405,6 +441,7 @@ class Discrepancy(Base):
     variance_minor: Mapped[int] = mapped_column(BigInteger, nullable=False)
     currency_code: Mapped[str] = mapped_column(String(3), nullable=False, default="USD")
     trace_summary_json: Mapped[dict] = mapped_column(JSONB, nullable=False, server_default="{}")
+    carrier_code: Mapped[str | None] = mapped_column(String(32), nullable=True)
     review_status: Mapped[DiscrepancyReviewStatus] = mapped_column(
         Enum(DiscrepancyReviewStatus, name="discrepancy_review_status"),
         nullable=False,

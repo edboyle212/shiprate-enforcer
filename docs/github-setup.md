@@ -1,6 +1,6 @@
 # GitHub setup (Shiprate Enforcer)
 
-Source of truth until GitHub exists: `origin/cursor/mvp-finish-787e` on Cursor Origin (`edward-boyle/tmp-73c4e119099081cc`).
+**Source of truth:** GitHub `edboyle212/shiprate-enforcer` (`main`). Cursor **`origin`** is the Project mirror; cloud agents also use remote **`github`**.
 
 ## One-time: authenticate GitHub CLI
 

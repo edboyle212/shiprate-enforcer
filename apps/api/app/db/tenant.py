@@ -15,6 +15,8 @@ from app.models import Organization, Shipment
 
 
 def _ensure_organization(session: Session, organization_id: uuid.UUID) -> None:
+    set_organization_context(organization_id)
+    _apply_org(session)
     if session.get(Organization, organization_id) is None:
         slug = f"org-{organization_id.hex}"
         session.add(

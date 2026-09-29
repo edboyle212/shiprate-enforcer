@@ -7,6 +7,7 @@ from pydantic import BaseModel, Field
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.auth import require_partner_access
 from app.db import get_db, set_rls_organization
 from app.models import Organization
 from app.services.org_settings import profile_from_org
@@ -34,7 +35,11 @@ class PartnerProfilePayload(BaseModel):
 
 
 @router.get("/partners/{partner_id}/profile")
-async def read_partner_profile(partner_id: str, db: AsyncSession = Depends(get_db)) -> dict:
+async def read_partner_profile(
+    partner_id: str,
+    db: AsyncSession = Depends(get_db),
+    _access: str = Depends(require_partner_access),
+) -> dict:
     return await get_partner_profile(db, partner_id)
 
 
@@ -43,6 +48,7 @@ async def write_partner_profile(
     partner_id: str,
     body: PartnerProfilePayload,
     db: AsyncSession = Depends(get_db),
+    _access: str = Depends(require_partner_access),
 ) -> dict:
     payload = body.model_dump(exclude_none=True)
     branding_keys = ("branding_mode", "logo_url", "primary_color", "support_email", "display_name")
@@ -86,7 +92,11 @@ def _setup_complete(org: Organization) -> bool:
 
 
 @router.get("/partners/{partner_id}/accounts", response_model=list[PartnerAccountListItem])
-async def list_partner_accounts(partner_id: str, db: AsyncSession = Depends(get_db)) -> list[PartnerAccountListItem]:
+async def list_partner_accounts(
+    partner_id: str,
+    db: AsyncSession = Depends(get_db),
+    _access: str = Depends(require_partner_access),
+) -> list[PartnerAccountListItem]:
     result = await db.scalars(
         select(Organization).where(Organization.partner_id == partner_id).order_by(Organization.created_at.desc())
     )
@@ -108,6 +118,7 @@ async def create_partner_account(
     partner_id: str,
     body: PartnerAccountCreate,
     db: AsyncSession = Depends(get_db),
+    _access: str = Depends(require_partner_access),
 ) -> PartnerAccountListItem:
     name = body.name.strip()
     if not name:
@@ -134,11 +145,12 @@ async def get_partner_account(
     partner_id: str,
     org_id: UUID,
     db: AsyncSession = Depends(get_db),
+    _access: str = Depends(require_partner_access),
 ) -> dict:
+    await set_rls_organization(db, org_id)
     org = await db.scalar(select(Organization).where(Organization.id == org_id))
     if not org or org.partner_id != partner_id:
         raise HTTPException(status_code=404, detail="Account not found")
-    await set_rls_organization(db, org.id)
     summary = await get_reporting_summary(db, org.id)
     return {
         "profile": profile_from_org(org),

@@ -48,10 +48,12 @@ def test_health_ok(api_client: tuple[TestClient, AsyncMock]):
     assert res.json()["status"] == "ok"
 
 
-def test_imports_missing_org_returns_400(api_client: tuple[TestClient, AsyncMock]):
+def test_imports_missing_org_returns_401(api_client: tuple[TestClient, AsyncMock]):
     client, _ = api_client
+    client.headers.pop("Authorization", None)
+    client.headers.pop("X-Organization-Id", None)
     res = client.post(f"{PREFIX}/import-jobs?source_file_id={uuid.uuid4()}&idempotency_key=k")
-    assert res.status_code == 400
+    assert res.status_code == 401
 
 
 @patch("app.routers.imports.set_rls_organization", new_callable=AsyncMock)
@@ -354,7 +356,7 @@ def test_manual_match_not_found(
 def test_etl_poll_drop(mock_poll: AsyncMock, api_client: tuple[TestClient, AsyncMock]):
     client, _ = api_client
     mock_poll.return_value = {"partner_id": "jasci", "ingested": ["a.csv"], "skipped": []}
-    res = client.post(f"{PREFIX}/etl/poll-drop", headers=ORG_HEADER, json={"partner_id": "jasci"})
+    res = client.post(f"{PREFIX}/etl/poll-drop", headers=ORG_HEADER)
     assert res.status_code == 200
     assert res.json()["ingested"] == ["a.csv"]
 
@@ -433,9 +435,9 @@ def test_create_organization(_rls: AsyncMock, api_client: tuple[TestClient, Asyn
     assert res.json()["slug"] == "acme-test-unique"
 
 
-@patch("app.routers.orgs.set_rls_organization", new_callable=AsyncMock)
-@patch("app.routers.orgs.get_organization_id", return_value=None)
-def test_get_current_org_missing_context(_org: MagicMock, _rls: AsyncMock, api_client: tuple[TestClient, AsyncMock]):
+def test_get_current_org_missing_context(api_client: tuple[TestClient, AsyncMock]):
     client, _ = api_client
+    client.headers.pop("Authorization", None)
+    client.headers.pop("X-Organization-Id", None)
     res = client.get(f"{PREFIX}/organizations/current")
-    assert res.status_code == 400
+    assert res.status_code == 401

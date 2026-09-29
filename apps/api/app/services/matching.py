@@ -58,6 +58,7 @@ def _sync_set_org(session: Session, organization_id: uuid.UUID) -> None:
 
 
 def _ensure_organization(session: Session, organization_id: uuid.UUID) -> None:
+    _sync_set_org(session, organization_id)
     if session.get(Organization, organization_id) is None:
         slug = f"org-{organization_id.hex}"
         session.add(Organization(id=organization_id, name=slug, slug=slug))

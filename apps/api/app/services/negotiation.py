@@ -23,8 +23,14 @@ from app.models import (
 )
 from app.services.disputes import build_dispute_draft_text
 from app.config import settings as app_settings
-from app.services.mail import MailDeliveryError, MailSender, default_mail_sender, get_mail_sender
-from app.services.org_settings import carrier_billing_email
+from app.services.mail import (
+    MailDeliveryError,
+    MailSender,
+    default_mail_sender,
+    get_mail_sender,
+    outbound_mail_configured,
+)
+from app.services.carrier_contacts import resolve_carrier_email
 
 MAX_ROUNDS = 5
 TERMINAL_STATUSES = frozenset({DisputeCaseStatus.credited, DisputeCaseStatus.closed})
@@ -140,8 +146,12 @@ def _send_message(
     case: DisputeCase,
     message: DisputeMessage,
     sender: MailSender,
-    to_address: str,
+    to_address: str | None,
 ) -> None:
+    if not app_settings.outbound_carrier_send_enabled:
+        raise ValueError("outbound_disabled")
+    if not to_address:
+        raise ValueError("carrier_unresolved")
     reply_to = app_settings.dispute_reply_to or app_settings.dispute_from_email
     try:
         sender.send(
@@ -152,8 +162,9 @@ def _send_message(
         )
     except MailDeliveryError as exc:
         raise ValueError("mail_delivery_failed") from exc
-    message.status = DisputeMessageStatus.sent
-    message.sent_at = datetime.now(UTC)
+    if outbound_mail_configured():
+        message.status = DisputeMessageStatus.sent
+        message.sent_at = datetime.now(UTC)
 
 
 def apply_credit(case: DisputeCase, *, recovered_amount_minor: int) -> None:
@@ -175,7 +186,7 @@ def _create_outbound(
     case: DisputeCase,
     *,
     sender: MailSender,
-    to_address: str,
+    to_address: str | None,
     counter: bool,
 ) -> DisputeMessage:
     next_round = outbound_round_count(list(case.messages or [])) + 1
@@ -246,7 +257,8 @@ async def apply_negotiation_step(
     carrier_code = None
     if case.discrepancy and case.discrepancy.trace_summary_json:
         carrier_code = case.discrepancy.trace_summary_json.get("carrier_code")
-    to_address = carrier_billing_email(org_settings, carrier_code if isinstance(carrier_code, str) else None)
+    carrier_key = carrier_code if isinstance(carrier_code, str) else None
+    to_address = await resolve_carrier_email(session, carrier_key)
 
     inbound = latest_unanswered_inbound(list(case.messages or []))
     if inbound is not None:
@@ -255,19 +267,6 @@ async def apply_negotiation_step(
             offered_amount_minor=inbound.offered_amount_minor,
             claim_amount_minor=case.claim_amount_minor,
         )
-        if outcome == "full_credit" and case.autonomy_tier == "autonomous":
-            apply_credit(case, recovered_amount_minor=case.claim_amount_minor)
-            _add_event(
-                session,
-                case,
-                "credited",
-                {
-                    "recovered_amount_minor": case.recovered_amount_minor,
-                    "fee_amount_minor": case.fee_amount_minor,
-                    "source": "autonomous_full_credit",
-                },
-            )
-            return case
         if outcome in {"full_credit", "platform"}:
             case.status = DisputeCaseStatus.awaiting_platform
             _add_event(
@@ -379,7 +378,8 @@ async def approve_and_send(
     carrier_code = None
     if case.discrepancy and case.discrepancy.trace_summary_json:
         carrier_code = case.discrepancy.trace_summary_json.get("carrier_code")
-    to_address = carrier_billing_email(settings_json, carrier_code if isinstance(carrier_code, str) else None)
+    carrier_key = carrier_code if isinstance(carrier_code, str) else None
+    to_address = await resolve_carrier_email(session, carrier_key)
     message.status = DisputeMessageStatus.approved
     _send_message(case=case, message=message, sender=sender or get_mail_sender(), to_address=to_address)
     case.status = DisputeCaseStatus.awaiting_carrier
@@ -422,7 +422,7 @@ async def record_credit(
     case = await _load_case(session, organization_id=organization_id, dispute_case_id=dispute_case_id)
     if not case:
         raise ValueError("case_not_found")
-    if case.status == DisputeCaseStatus.closed:
+    if case.status in TERMINAL_STATUSES:
         raise ValueError("case_terminal")
     apply_credit(case, recovered_amount_minor=recovered_amount_minor)
     _add_event(

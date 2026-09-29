@@ -1,6 +1,8 @@
-"""Shared pytest helpers and import shims for the Building Agent layout."""
+"""Shared pytest configuration and fixtures."""
 
 from __future__ import annotations
+
+pytest_plugins = ["tests.db"]
 
 import importlib
 import json
@@ -8,10 +10,8 @@ import os
 from pathlib import Path
 from typing import Any, Callable
 
-import uuid
-
 import pytest
-from unittest.mock import AsyncMock
+import uuid
 
 FIXTURES_DIR = Path(__file__).resolve().parent / "fixtures"
 
@@ -19,29 +19,19 @@ ORG_ID = uuid.UUID("01950000-0000-7000-8000-000000000001")
 ORG_HEADER = {"X-Organization-Id": str(ORG_ID)}
 
 
-@pytest.fixture
-def api_client():
-    from app.db import get_db
-    from app.main import app
-
-    session = AsyncMock()
-
-    async def _fake_db():
-        yield session
-
-    app.dependency_overrides[get_db] = _fake_db
-    from fastapi.testclient import TestClient
-
-    client = TestClient(app)
-    yield client, session
-    app.dependency_overrides.clear()
+def pytest_configure(config: pytest.Config) -> None:
+    os.environ.setdefault("ENV", "test")
+    os.environ.setdefault("ALLOW_DEV_TENANT_HEADER", "1")
+    os.environ.setdefault("SHIPRATE_ALLOW_TEST_BEARER", "1")
+    if os.environ.get("CI") == "true":
+        os.environ.setdefault("SHIPRATE_REQUIRE_DATABASE", "1")
 
 
-def load_json_fixture(name: str) -> dict[str, Any]:
-    path = FIXTURES_DIR / name
-    if not path.is_file():
-        pytest.fail(f"Missing fixture file: {path}")
-    return json.loads(path.read_text(encoding="utf-8"))
+def pytest_collection_modifyitems(config: pytest.Config, items: list[pytest.Item]) -> None:
+    if os.environ.get("SHIPRATE_FAIL_ON_SKIP") == "1":
+        for item in items:
+            if "skip" in item.keywords:
+                item.add_marker(pytest.mark.xfail(reason="skips forbidden in CI", strict=True))
 
 
 def try_import(module_name: str):
@@ -59,6 +49,17 @@ def first_import(*module_names: str):
     return None
 
 
+def load_json_fixture(name: str) -> dict[str, Any]:
+    path = FIXTURES_DIR / name
+    if not path.is_file():
+        pytest.fail(f"Missing fixture file: {path}")
+    return json.loads(path.read_text(encoding="utf-8"))
+
+
+def database_url() -> str | None:
+    return os.environ.get("TEST_DATABASE_URL") or os.environ.get("DATABASE_URL")
+
+
 @pytest.fixture(scope="session")
 def golden_rating_request() -> dict[str, Any]:
     return load_json_fixture("golden_rating_request.json")
@@ -69,29 +70,47 @@ def golden_rating_expected() -> dict[str, Any]:
     return load_json_fixture("golden_rating_expected.json")
 
 
-def skip_until_implemented(feature: str, resolver: Callable[[], Any]):
-    obj = resolver()
-    if obj is None:
-        pytest.skip(f"{feature} not implemented yet (Building Agent)")
-    return obj
-
-
-def database_url() -> str | None:
-    return os.environ.get("DATABASE_URL") or os.environ.get("TEST_DATABASE_URL")
+@pytest.fixture(scope="session")
+def rls_available() -> bool:
+    return os.environ.get("SHIPRATE_RLS_ENABLED", "").lower() in ("1", "true", "yes")
 
 
 @pytest.fixture(scope="session")
-def rls_available() -> bool:
-    if os.environ.get("SHIPRATE_RLS_ENABLED", "").lower() in ("1", "true", "yes"):
-        return True
-    mod = first_import("app.db.rls", "app.database.rls", "shiprate.db.rls")
-    if mod is None:
-        return False
-    return bool(getattr(mod, "RLS_ENABLED", False))
+def require_db():
+    if os.environ.get("SHIPRATE_REQUIRE_DATABASE", "").lower() in ("1", "true", "yes"):
+        if not database_url():
+            pytest.fail("TEST_DATABASE_URL is required when SHIPRATE_REQUIRE_DATABASE=1")
+    elif not database_url():
+        pytest.skip("DATABASE_URL / TEST_DATABASE_URL not set")
+    yield
 
 
 @pytest.fixture
-def require_db(rls_available: bool):
-    if not database_url():
-        pytest.skip("DATABASE_URL / TEST_DATABASE_URL not set")
-    yield
+def api_client(require_db):
+    from unittest.mock import AsyncMock
+
+    from app.db import get_db
+    from app.main import app
+
+    session = AsyncMock()
+
+    async def _fake_db():
+        yield session
+
+    app.dependency_overrides[get_db] = _fake_db
+    from fastapi.testclient import TestClient
+
+    client = TestClient(app)
+    client.headers.update(ORG_HEADER)
+    from tests.db import admin_auth_headers
+
+    client.headers.update(admin_auth_headers())
+    yield client, session
+    app.dependency_overrides.clear()
+
+
+def skip_until_implemented(feature: str, resolver: Callable[[], Any]):
+    obj = resolver()
+    if obj is None:
+        pytest.fail(f"{feature} not implemented")
+    return obj
