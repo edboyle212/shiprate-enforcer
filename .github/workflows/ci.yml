@@ -71,7 +71,6 @@ jobs:
   web-playwright:
     name: Web Playwright smoke
     runs-on: ubuntu-latest
-    if: hashFiles('apps/web/package.json') != ''
     services:
       postgres:
         image: postgres:16-alpine
