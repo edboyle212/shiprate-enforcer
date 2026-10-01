@@ -33,6 +33,18 @@ def _default_sync_url() -> str:
     return "postgresql://shiprate:shiprate@localhost:5432/shiprate"
 
 
+def migration_sync_url() -> str:
+    """Sync URL for Alembic (superuser/migrator — not shiprate_app)."""
+    raw = os.environ.get("TEST_DATABASE_URL") or os.environ.get("DATABASE_URL")
+    if raw:
+        if raw.startswith("postgresql+asyncpg://"):
+            return raw.replace("postgresql+asyncpg://", "postgresql://", 1)
+        if raw.startswith("postgres://"):
+            return raw.replace("postgres://", "postgresql://", 1)
+        return raw
+    return "postgresql://shiprate:shiprate@localhost:5432/shiprate"
+
+
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
