@@ -14,3 +14,4 @@ test-results/
 apps/api/.coverage
 apps/api/data/uploads/
 .cursor/debug-*.log
+actionlint
