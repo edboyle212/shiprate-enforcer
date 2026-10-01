@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import uuid
-from contextlib import contextmanager
 from datetime import UTC, datetime
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -13,21 +12,18 @@ from fastapi.testclient import TestClient
 from app.config import settings
 from app.middleware.tenancy import TenancyMiddleware
 from app.models import (
-    CarrierInvoiceLine,
     DisputeCase,
     DisputeCaseStatus,
     DisputeMessage,
     DisputeMessageDirection,
     DisputeMessageStatus,
     MatchType,
-    Organization,
-    Shipment,
     ShipmentInvoiceMatch,
     WmsPartner,
 )
+from app.services import import_jobs as import_jobs_service
 from app.services.compliance import list_discrepancies, run_compliance_for_invoice_line
 from app.services.matching import get_match_for_invoice_line, persist_tracking_match
-from app.services import import_jobs as import_jobs_service
 from tests.conftest import ORG_HEADER, ORG_ID
 from tests.db import admin_auth_headers
 

@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import uuid
 from dataclasses import dataclass
-from typing import Any
 
 from sqlalchemy import create_engine, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -16,12 +15,12 @@ from app.models import (
     ComplianceCheck,
     ComplianceCheckStatus,
     Discrepancy,
+    MatchType,
     Organization,
     RateCardVersion,
     RateCardVersionStatus,
     Shipment,
     ShipmentInvoiceMatch,
-    MatchType,
 )
 from app.rating.engine import rate as rate_request
 
@@ -218,84 +217,83 @@ def run_compliance_for_invoice_line(
     if evaluation is None:
         return None
 
-    with _sync_session_factory()() as session:
-        with session.begin():
-            _sync_set_org(session, organization_id)
-            _ensure_organization(session, organization_id)
+    with _sync_session_factory()() as session, session.begin():
+        _sync_set_org(session, organization_id)
+        _ensure_organization(session, organization_id)
 
-            line = session.get(CarrierInvoiceLine, carrier_invoice_line_id)
-            if line is None:
-                session.add(
-                    CarrierInvoiceLine(
-                        id=carrier_invoice_line_id,
-                        organization_id=organization_id,
-                        billed_amount_minor=billed_amount_minor,
-                    )
-                )
-            else:
-                line.billed_amount_minor = billed_amount_minor
-
-            match = session.scalar(
-                select(ShipmentInvoiceMatch).where(
-                    ShipmentInvoiceMatch.organization_id == organization_id,
-                    ShipmentInvoiceMatch.carrier_invoice_line_id == carrier_invoice_line_id,
-                )
-            )
-            if match is None:
-                shipment_id = uuid.uuid4()
-                session.add(
-                    Shipment(
-                        id=shipment_id,
-                        organization_id=organization_id,
-                        tracking_number="integration-stub",
-                    )
-                )
-                match = ShipmentInvoiceMatch(
+        line = session.get(CarrierInvoiceLine, carrier_invoice_line_id)
+        if line is None:
+            session.add(
+                CarrierInvoiceLine(
+                    id=carrier_invoice_line_id,
                     organization_id=organization_id,
-                    shipment_id=shipment_id,
-                    carrier_invoice_line_id=carrier_invoice_line_id,
-                    match_type=MatchType.manual,
+                    billed_amount_minor=billed_amount_minor,
                 )
-                session.add(match)
-                session.flush()
-
-            rate_card = _ensure_stub_rate_card(session, organization_id, rating_run_id)
-
-            check = ComplianceCheck(
-                organization_id=organization_id,
-                shipment_invoice_match_id=match.id,
-                rate_card_version_id=rate_card.id,
-                billed_amount_minor=billed_amount_minor,
-                allowed_amount_minor=allowed_amount_minor,
-                variance_minor=evaluation.variance_minor,
-                within_tolerance=False,
-                status=ComplianceCheckStatus.failed,
-                rating_trace_json={"rating_run_id": str(rating_run_id)},
             )
-            session.add(check)
-            session.flush()
+        else:
+            line.billed_amount_minor = billed_amount_minor
 
-            disc = Discrepancy(
-                organization_id=organization_id,
-                compliance_check_id=check.id,
-                reason_codes=[evaluation.reason_code, "OVER_TOLERANCE"],
-                billed_amount_minor=billed_amount_minor,
-                allowed_amount_minor=allowed_amount_minor,
-                variance_minor=evaluation.variance_minor,
-                trace_summary_json={"rating_run_id": str(rating_run_id)},
+        match = session.scalar(
+            select(ShipmentInvoiceMatch).where(
+                ShipmentInvoiceMatch.organization_id == organization_id,
+                ShipmentInvoiceMatch.carrier_invoice_line_id == carrier_invoice_line_id,
             )
-            session.add(disc)
-            session.flush()
-            session.refresh(disc)
-
-            return PersistedDiscrepancy(
-                id=disc.id,
-                reason_code=evaluation.reason_code,
-                billed_amount_minor=billed_amount_minor,
-                allowed_amount_minor=allowed_amount_minor,
-                variance_minor=evaluation.variance_minor,
+        )
+        if match is None:
+            shipment_id = uuid.uuid4()
+            session.add(
+                Shipment(
+                    id=shipment_id,
+                    organization_id=organization_id,
+                    tracking_number="integration-stub",
+                )
+            )
+            match = ShipmentInvoiceMatch(
+                organization_id=organization_id,
+                shipment_id=shipment_id,
                 carrier_invoice_line_id=carrier_invoice_line_id,
+                match_type=MatchType.manual,
             )
+            session.add(match)
+            session.flush()
+
+        rate_card = _ensure_stub_rate_card(session, organization_id, rating_run_id)
+
+        check = ComplianceCheck(
+            organization_id=organization_id,
+            shipment_invoice_match_id=match.id,
+            rate_card_version_id=rate_card.id,
+            billed_amount_minor=billed_amount_minor,
+            allowed_amount_minor=allowed_amount_minor,
+            variance_minor=evaluation.variance_minor,
+            within_tolerance=False,
+            status=ComplianceCheckStatus.failed,
+            rating_trace_json={"rating_run_id": str(rating_run_id)},
+        )
+        session.add(check)
+        session.flush()
+
+        disc = Discrepancy(
+            organization_id=organization_id,
+            compliance_check_id=check.id,
+            reason_codes=[evaluation.reason_code, "OVER_TOLERANCE"],
+            billed_amount_minor=billed_amount_minor,
+            allowed_amount_minor=allowed_amount_minor,
+            variance_minor=evaluation.variance_minor,
+            trace_summary_json={"rating_run_id": str(rating_run_id)},
+        )
+        session.add(disc)
+        session.flush()
+        session.refresh(disc)
+
+        return PersistedDiscrepancy(
+            id=disc.id,
+            reason_code=evaluation.reason_code,
+            billed_amount_minor=billed_amount_minor,
+            allowed_amount_minor=allowed_amount_minor,
+            variance_minor=evaluation.variance_minor,
+            carrier_invoice_line_id=carrier_invoice_line_id,
+        )
 
 
 create_discrepancy_for_line = run_compliance_for_invoice_line

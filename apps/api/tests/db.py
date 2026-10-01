@@ -10,12 +10,10 @@ import pytest
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
-from app.config import settings
 from app.models import (
     MembershipRole,
     Organization,
     OrganizationMembership,
-    PlatformAdmin,
     User,
 )
 
@@ -59,10 +57,9 @@ async def async_engine():
 @pytest.fixture
 async def db_session(async_engine) -> AsyncGenerator[AsyncSession, None]:
     session_factory = async_sessionmaker(async_engine, expire_on_commit=False, class_=AsyncSession)
-    async with session_factory() as session:
-        async with session.begin():
-            yield session
-            await session.rollback()
+    async with session_factory() as session, session.begin():
+        yield session
+        await session.rollback()
 
 
 async def ensure_test_identity(session: AsyncSession) -> None:

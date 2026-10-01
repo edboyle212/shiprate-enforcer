@@ -5,12 +5,17 @@ from __future__ import annotations
 import uuid
 from typing import Any
 
-from sqlalchemy import func, select, text
+from sqlalchemy import create_engine, func, select, text
 from sqlalchemy.orm import Session, sessionmaker
-from sqlalchemy import create_engine
 
 from app.config import settings
-from app.models import ImportJob, ImportJobStatus, Organization, SourceFile, SourceFileKind
+from app.models import (
+    ImportJob,
+    ImportJobStatus,
+    Organization,
+    SourceFile,
+    SourceFileKind,
+)
 
 
 def _ensure_organization(session: Session, organization_id: uuid.UUID) -> None:
@@ -58,30 +63,29 @@ def create_import_job(
     kind: str,
     **_: Any,
 ) -> ImportJob:
-    with SessionLocal() as session:
-        with session.begin():
-            _ensure_organization(session, organization_id)
-            existing = session.scalar(
-                select(ImportJob).where(
-                    ImportJob.organization_id == organization_id,
-                    ImportJob.idempotency_key == idempotency_key,
-                )
+    with SessionLocal() as session, session.begin():
+        _ensure_organization(session, organization_id)
+        existing = session.scalar(
+            select(ImportJob).where(
+                ImportJob.organization_id == organization_id,
+                ImportJob.idempotency_key == idempotency_key,
             )
-            if existing:
-                return existing
+        )
+        if existing:
+            return existing
 
-            source = _ensure_source_file(session, organization_id, source_file_sha256)
-            job = ImportJob(
-                organization_id=organization_id,
-                source_file_id=source.id,
-                idempotency_key=idempotency_key,
-                sha256_hex=source_file_sha256,
-                status=ImportJobStatus.pending,
-            )
-            session.add(job)
-            session.flush()
-            session.refresh(job)
-            return job
+        source = _ensure_source_file(session, organization_id, source_file_sha256)
+        job = ImportJob(
+            organization_id=organization_id,
+            source_file_id=source.id,
+            idempotency_key=idempotency_key,
+            sha256_hex=source_file_sha256,
+            status=ImportJobStatus.pending,
+        )
+        session.add(job)
+        session.flush()
+        session.refresh(job)
+        return job
 
 
 def count_import_jobs(*, organization_id: uuid.UUID, idempotency_key: str) -> int:

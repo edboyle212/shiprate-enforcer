@@ -6,7 +6,13 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db import get_db, set_rls_organization
-from app.models import RateCardVersion, RateCardVersionStatus, RatingExplanation, RatingRun, RatingRunStatus
+from app.models import (
+    RateCardVersion,
+    RateCardVersionStatus,
+    RatingExplanation,
+    RatingRun,
+    RatingRunStatus,
+)
 from app.rating.engine import rate as rate_request
 from app.routers.imports import require_org_id
 

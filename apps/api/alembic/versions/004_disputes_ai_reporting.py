@@ -4,16 +4,17 @@ Revision ID: 004_disputes_ai
 Revises: 003_compliance
 """
 
-from typing import Sequence, Union
+from collections.abc import Sequence
 
 import sqlalchemy as sa
-from alembic import op
 from sqlalchemy.dialects import postgresql
 
+from alembic import op
+
 revision: str = "004_disputes_ai"
-down_revision: Union[str, None] = "003_compliance"
-branch_labels: Union[str, Sequence[str], None] = None
-depends_on: Union[str, Sequence[str], None] = None
+down_revision: str | None = "003_compliance"
+branch_labels: str | Sequence[str] | None = None
+depends_on: str | Sequence[str] | None = None
 
 discrepancy_review_status = postgresql.ENUM(
     "open", "approved", "rejected", "hold", name="discrepancy_review_status", create_type=False

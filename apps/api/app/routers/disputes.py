@@ -6,10 +6,10 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from app.db import get_db, set_rls_organization
-from app.models import DisputeCase, DisputeDraft, DisputeMessage
 from app.auth import require_org_id, require_platform_admin
 from app.auth.principal import Principal
+from app.db import get_db, set_rls_organization
+from app.models import DisputeCase, DisputeMessage
 from app.services import disputes as dispute_service
 from app.services import negotiation as negotiation_service
 from app.services.mail import outbound_mail_configured, outbound_mail_from_address

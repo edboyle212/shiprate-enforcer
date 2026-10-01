@@ -238,7 +238,6 @@ def api_client():
 @patch("app.routers.orgs.set_rls_organization", new_callable=AsyncMock)
 def test_client_patch_route_strips_fee(mock_rls: AsyncMock, api_client: TestClient):
     from app.models import Organization
-    from app.routers import orgs as orgs_router
 
     org = Organization(id=ORG_ID, name="Acme", slug="acme", settings_json={"recovery_fee_bps": 2000})
 

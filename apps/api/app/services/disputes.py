@@ -19,7 +19,10 @@ from app.models import (
     DisputeDraftStatus,
     Organization,
 )
-from app.services.org_settings import autonomy_tier_from_settings, recovery_fee_bps_from_settings
+from app.services.org_settings import (
+    autonomy_tier_from_settings,
+    recovery_fee_bps_from_settings,
+)
 
 
 def format_money_minor(minor: int, currency: str) -> str:

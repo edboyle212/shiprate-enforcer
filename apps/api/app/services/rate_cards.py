@@ -57,32 +57,31 @@ def publish_rate_card_version(
     status: str,
     rules_blob: dict[str, Any],
 ) -> RateCardVersion:
-    with SessionLocal() as session:
-        with session.begin():
-            _ensure_organization(session, organization_id)
-            row = session.scalar(
-                select(RateCardVersion).where(
-                    RateCardVersion.id == rate_card_version_id,
-                    RateCardVersion.organization_id == organization_id,
-                )
+    with SessionLocal() as session, session.begin():
+        _ensure_organization(session, organization_id)
+        row = session.scalar(
+            select(RateCardVersion).where(
+                RateCardVersion.id == rate_card_version_id,
+                RateCardVersion.organization_id == organization_id,
             )
-            if not row:
-                row = RateCardVersion(
-                    id=rate_card_version_id,
-                    organization_id=organization_id,
-                    carrier_code="UPS",
-                    version_label="test",
-                    rules_json=rules_blob,
-                    status=RateCardVersionStatus.draft,
-                )
-                session.add(row)
-            row.rules_json = rules_blob
-            if status == "approved":
-                row.status = RateCardVersionStatus.approved
-                row.approved_at = datetime.now(UTC)
-            session.flush()
-            session.refresh(row)
-            return row
+        )
+        if not row:
+            row = RateCardVersion(
+                id=rate_card_version_id,
+                organization_id=organization_id,
+                carrier_code="UPS",
+                version_label="test",
+                rules_json=rules_blob,
+                status=RateCardVersionStatus.draft,
+            )
+            session.add(row)
+        row.rules_json = rules_blob
+        if status == "approved":
+            row.status = RateCardVersionStatus.approved
+            row.approved_at = datetime.now(UTC)
+        session.flush()
+        session.refresh(row)
+        return row
 
 
 def update_rate_card_version_rules(
@@ -91,17 +90,16 @@ def update_rate_card_version_rules(
     rate_card_version_id: uuid.UUID,
     rules_blob: dict[str, Any],
 ) -> None:
-    with SessionLocal() as session:
-        with session.begin():
-            _ensure_organization(session, organization_id)
-            row = session.scalar(
-                select(RateCardVersion).where(
-                    RateCardVersion.id == rate_card_version_id,
-                    RateCardVersion.organization_id == organization_id,
-                )
+    with SessionLocal() as session, session.begin():
+        _ensure_organization(session, organization_id)
+        row = session.scalar(
+            select(RateCardVersion).where(
+                RateCardVersion.id == rate_card_version_id,
+                RateCardVersion.organization_id == organization_id,
             )
-            if not row:
-                raise ValueError("rate card version not found")
-            if row.status == RateCardVersionStatus.approved:
-                raise PermissionError("approved rate card versions are immutable")
-            row.rules_json = rules_blob
+        )
+        if not row:
+            raise ValueError("rate card version not found")
+        if row.status == RateCardVersionStatus.approved:
+            raise PermissionError("approved rate card versions are immutable")
+        row.rules_json = rules_blob

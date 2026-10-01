@@ -11,8 +11,8 @@ __all__ = [
     "Principal",
     "get_principal",
     "principal_ctx",
-    "require_principal",
     "require_org_id",
-    "require_platform_admin",
     "require_partner_access",
+    "require_platform_admin",
+    "require_principal",
 ]

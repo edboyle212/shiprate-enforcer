@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import Any
+
 from sqlalchemy.orm.attributes import flag_modified
 
 VALID_AUTONOMY_TIERS = frozenset({"draft", "approve_each", "autonomous"})

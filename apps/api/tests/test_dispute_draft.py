@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import uuid
 from types import SimpleNamespace
 
 from app.services.disputes import build_dispute_draft_text

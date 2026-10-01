@@ -75,7 +75,6 @@ def api_client():
 def test_profile_patch_route_strips_fee(mock_rls: AsyncMock, api_client: TestClient):
     from app.db import get_db
     from app.main import app
-    from app.routers import orgs as orgs_router
 
     org = Organization(
         id=ORG_ID,
@@ -120,7 +119,6 @@ def test_profile_patch_route_strips_fee(mock_rls: AsyncMock, api_client: TestCli
 def test_profile_get_includes_setup_complete(_mock_rls: AsyncMock, api_client: TestClient):
     from app.db import get_db
     from app.main import app
-    from app.routers import orgs as orgs_router
 
     org = Organization(
         id=ORG_ID,

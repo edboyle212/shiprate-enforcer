@@ -4,14 +4,14 @@ Revision ID: 005_force_rls
 Revises: 004_disputes_ai
 """
 
-from typing import Sequence, Union
+from collections.abc import Sequence
 
 from alembic import op
 
 revision: str = "005_force_rls"
-down_revision: Union[str, None] = "004_disputes_ai"
-branch_labels: Union[str, Sequence[str], None] = None
-depends_on: Union[str, Sequence[str], None] = None
+down_revision: str | None = "004_disputes_ai"
+branch_labels: str | Sequence[str] | None = None
+depends_on: str | Sequence[str] | None = None
 
 # Tables that already have an organization_id isolation policy.
 # organizations stays unforced: its policy is SELECT-only, and org bootstrap

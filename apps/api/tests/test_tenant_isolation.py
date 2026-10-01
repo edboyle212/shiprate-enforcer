@@ -6,9 +6,7 @@ import os
 import uuid
 
 import pytest
-
 from conftest import database_url, first_import, skip_until_implemented
-
 
 pytestmark = [pytest.mark.rls, pytest.mark.integration]
 

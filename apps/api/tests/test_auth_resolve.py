@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import uuid
 from unittest.mock import AsyncMock
 
 import pytest
@@ -54,5 +53,5 @@ async def test_invalid_bearer_returns_none():
 async def test_malformed_test_token_returns_none():
     session = AsyncMock()
     assert await principal_from_bearer(session, "Bearer shiprate-test:only-two") is None
-    bad_org = f"Bearer shiprate-test:user:not-a-uuid"
+    bad_org = "Bearer shiprate-test:user:not-a-uuid"
     assert await principal_from_bearer(session, bad_org) is None

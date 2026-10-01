@@ -3,7 +3,19 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import allow_dev_tenant_header, settings
 from app.middleware.auth import AuthMiddleware
-from app.routers import ai, compliance, disputes, etl, health, imports, matching, orgs, partners, rating, reporting
+from app.routers import (
+    ai,
+    compliance,
+    disputes,
+    etl,
+    health,
+    imports,
+    matching,
+    orgs,
+    partners,
+    rating,
+    reporting,
+)
 
 app = FastAPI(title="Shiprate Enforcer API", version="0.1.0")
 

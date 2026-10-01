@@ -5,6 +5,8 @@ from pydantic import BaseModel, Field
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.auth import require_org_id, require_platform_admin
+from app.auth.principal import Principal
 from app.db import get_db, set_rls_organization
 from app.models import Organization
 from app.services.org_settings import (
@@ -13,8 +15,6 @@ from app.services.org_settings import (
     merge_client_settings,
     profile_from_org,
 )
-from app.auth import require_org_id, require_platform_admin
-from app.auth.principal import Principal
 
 router = APIRouter()
 

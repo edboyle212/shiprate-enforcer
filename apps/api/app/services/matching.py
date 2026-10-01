@@ -12,7 +12,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Session, sessionmaker
 
 from app.config import settings
-from app.models import CarrierInvoiceLine, MatchType, Organization, Shipment, ShipmentInvoiceMatch
+from app.models import (
+    CarrierInvoiceLine,
+    MatchType,
+    Organization,
+    Shipment,
+    ShipmentInvoiceMatch,
+)
 
 _TRACKING_NORM_RE = re.compile(r"[^A-Z0-9]+")
 
@@ -81,50 +87,49 @@ def persist_tracking_match(
     shipment_tracking: str | None = None,
     invoice_tracking: str | None = None,
 ) -> ShipmentInvoiceMatch:
-    with _sync_session_factory()() as session:
-        with session.begin():
-            _sync_set_org(session, organization_id)
-            _ensure_organization(session, organization_id)
+    with _sync_session_factory()() as session, session.begin():
+        _sync_set_org(session, organization_id)
+        _ensure_organization(session, organization_id)
 
-            shipment = session.get(Shipment, shipment_id)
-            if shipment is None:
-                session.add(
-                    Shipment(
-                        id=shipment_id,
-                        organization_id=organization_id,
-                        tracking_number=shipment_tracking,
-                    )
-                )
-            line = session.get(CarrierInvoiceLine, carrier_invoice_line_id)
-            if line is None:
-                session.add(
-                    CarrierInvoiceLine(
-                        id=carrier_invoice_line_id,
-                        organization_id=organization_id,
-                        tracking_number=invoice_tracking,
-                        billed_amount_minor=0,
-                    )
-                )
-
-            existing = session.scalar(
-                select(ShipmentInvoiceMatch).where(
-                    ShipmentInvoiceMatch.organization_id == organization_id,
-                    ShipmentInvoiceMatch.carrier_invoice_line_id == carrier_invoice_line_id,
+        shipment = session.get(Shipment, shipment_id)
+        if shipment is None:
+            session.add(
+                Shipment(
+                    id=shipment_id,
+                    organization_id=organization_id,
+                    tracking_number=shipment_tracking,
                 )
             )
-            if existing:
-                return existing
-
-            match = ShipmentInvoiceMatch(
-                organization_id=organization_id,
-                shipment_id=shipment_id,
-                carrier_invoice_line_id=carrier_invoice_line_id,
-                match_type=_match_type_for_trackings(shipment_tracking, invoice_tracking),
+        line = session.get(CarrierInvoiceLine, carrier_invoice_line_id)
+        if line is None:
+            session.add(
+                CarrierInvoiceLine(
+                    id=carrier_invoice_line_id,
+                    organization_id=organization_id,
+                    tracking_number=invoice_tracking,
+                    billed_amount_minor=0,
+                )
             )
-            session.add(match)
-            session.flush()
-            session.refresh(match)
-            return match
+
+        existing = session.scalar(
+            select(ShipmentInvoiceMatch).where(
+                ShipmentInvoiceMatch.organization_id == organization_id,
+                ShipmentInvoiceMatch.carrier_invoice_line_id == carrier_invoice_line_id,
+            )
+        )
+        if existing:
+            return existing
+
+        match = ShipmentInvoiceMatch(
+            organization_id=organization_id,
+            shipment_id=shipment_id,
+            carrier_invoice_line_id=carrier_invoice_line_id,
+            match_type=_match_type_for_trackings(shipment_tracking, invoice_tracking),
+        )
+        session.add(match)
+        session.flush()
+        session.refresh(match)
+        return match
 
 
 link_invoice_line_to_shipment = persist_tracking_match
@@ -135,15 +140,14 @@ def get_match_for_invoice_line(
     organization_id: uuid.UUID,
     carrier_invoice_line_id: uuid.UUID,
 ) -> ShipmentInvoiceMatch | dict[str, Any] | None:
-    with _sync_session_factory()() as session:
-        with session.begin():
-            _sync_set_org(session, organization_id)
-            return session.scalar(
-                select(ShipmentInvoiceMatch).where(
-                    ShipmentInvoiceMatch.organization_id == organization_id,
-                    ShipmentInvoiceMatch.carrier_invoice_line_id == carrier_invoice_line_id,
-                )
+    with _sync_session_factory()() as session, session.begin():
+        _sync_set_org(session, organization_id)
+        return session.scalar(
+            select(ShipmentInvoiceMatch).where(
+                ShipmentInvoiceMatch.organization_id == organization_id,
+                ShipmentInvoiceMatch.carrier_invoice_line_id == carrier_invoice_line_id,
             )
+        )
 
 
 find_shipment_for_invoice_line = get_match_for_invoice_line

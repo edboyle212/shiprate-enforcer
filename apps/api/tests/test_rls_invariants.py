@@ -6,12 +6,12 @@ import os
 import uuid
 
 import pytest
+from conftest import first_import, skip_until_implemented
 from sqlalchemy import create_engine, select, text
 from sqlalchemy.orm import Session
 
 from app.config import settings
 from app.models import Organization, Shipment
-from conftest import first_import, skip_until_implemented
 
 pytestmark = [pytest.mark.rls, pytest.mark.integration]
 

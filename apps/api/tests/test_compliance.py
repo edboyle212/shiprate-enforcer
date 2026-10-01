@@ -5,7 +5,6 @@ from __future__ import annotations
 import uuid
 
 import pytest
-
 from conftest import first_import, skip_until_implemented
 
 ALLOWED_MINOR = 10_000

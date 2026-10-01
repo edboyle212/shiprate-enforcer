@@ -3,12 +3,10 @@
 from __future__ import annotations
 
 import uuid
-from pathlib import Path
 
 import pytest
 
 from app.config import settings
-from app.services.storage import storage_service
 
 
 @pytest.mark.integration

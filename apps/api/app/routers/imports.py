@@ -8,6 +8,8 @@ from pydantic import BaseModel, Field
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.auth import require_org_id, require_partner_access, require_platform_admin
+from app.auth.principal import Principal
 from app.db import get_db, set_rls_organization
 from app.models import (
     CarrierInvoiceLine,
@@ -20,9 +22,7 @@ from app.models import (
     SourceFile,
     SourceFileKind,
 )
-from app.services.storage import sha256_hex, storage_service
-from app.auth import require_org_id, require_partner_access, require_platform_admin
-from app.auth.principal import Principal
+from app.services.storage import storage_service
 
 router = APIRouter()
 
@@ -243,7 +243,7 @@ def _parse_amount_minor(raw: str | None, *, currency_code: str, amount_in_major_
         return 0
     value = float(raw.replace(",", "").strip())
     if amount_in_major_units:
-        return int(round(value * 100))
+        return round(value * 100)
     return int(value)
 
 

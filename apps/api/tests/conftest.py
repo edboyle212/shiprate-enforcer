@@ -7,11 +7,12 @@ pytest_plugins = ["tests.db"]
 import importlib
 import json
 import os
+import uuid
+from collections.abc import Callable
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any
 
 import pytest
-import uuid
 
 FIXTURES_DIR = Path(__file__).resolve().parent / "fixtures"
 

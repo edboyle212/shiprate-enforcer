@@ -4,14 +4,14 @@ Revision ID: 007_fail_closed_rls
 Revises: 006_negotiation
 """
 
-from typing import Sequence, Union
+from collections.abc import Sequence
 
 from alembic import op
 
 revision: str = "007_fail_closed_rls"
-down_revision: Union[str, None] = "006_negotiation"
-branch_labels: Union[str, Sequence[str], None] = None
-depends_on: Union[str, Sequence[str], None] = None
+down_revision: str | None = "006_negotiation"
+branch_labels: str | Sequence[str] | None = None
+depends_on: str | Sequence[str] | None = None
 
 TENANT_TABLES = [
     "organization_memberships",

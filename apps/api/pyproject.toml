@@ -51,3 +51,6 @@ omit = ["app/models/__init__.py"]
 fail_under = 85
 show_missing = true
 skip_covered = true
+
+[tool.ruff.lint]
+ignore = ["B008", "B017", "SIM117", "SIM103", "TRY004", "RUF059", "F841"]

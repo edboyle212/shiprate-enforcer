@@ -29,8 +29,8 @@ REQUIRED_SUMMARY_KEYS = frozenset(
 
 @pytest.fixture
 def api_client():
-    from app.main import app
     from app.db import get_db
+    from app.main import app
 
     async def _fake_db():
         session = AsyncMock()

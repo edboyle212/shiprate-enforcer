@@ -54,29 +54,27 @@ def create_test_shipment(
     shipment_id: uuid.UUID,
     tracking_number: str,
 ) -> Shipment:
-    with SessionLocal() as session:
-        with session.begin():
-            _apply_org(session)
-            _ensure_organization(session, organization_id)
-            existing = session.get(Shipment, shipment_id)
-            if existing is not None:
-                return existing
-            row = Shipment(
-                id=shipment_id,
-                organization_id=organization_id,
-                tracking_number=tracking_number,
-            )
-            session.add(row)
-            session.flush()
-            session.refresh(row)
-            return row
+    with SessionLocal() as session, session.begin():
+        _apply_org(session)
+        _ensure_organization(session, organization_id)
+        existing = session.get(Shipment, shipment_id)
+        if existing is not None:
+            return existing
+        row = Shipment(
+            id=shipment_id,
+            organization_id=organization_id,
+            tracking_number=tracking_number,
+        )
+        session.add(row)
+        session.flush()
+        session.refresh(row)
+        return row
 
 
 def list_shipments(*, organization_id: uuid.UUID) -> list[Shipment | dict[str, Any]]:
     set_organization_context(organization_id)
-    with SessionLocal() as session:
-        with session.begin():
-            _apply_org(session)
-            # No organization_id predicate: RLS must hide other tenants.
-            rows = session.scalars(select(Shipment)).all()
-            return list(rows)
+    with SessionLocal() as session, session.begin():
+        _apply_org(session)
+        # No organization_id predicate: RLS must hide other tenants.
+        rows = session.scalars(select(Shipment)).all()
+        return list(rows)

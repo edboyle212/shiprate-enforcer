@@ -6,7 +6,6 @@ import hashlib
 import json
 
 import pytest
-
 from conftest import first_import, skip_until_implemented
 
 

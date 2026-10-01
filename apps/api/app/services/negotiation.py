@@ -10,6 +10,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
+from app.config import settings as app_settings
 from app.models import (
     DisputeCase,
     DisputeCaseEvent,
@@ -21,16 +22,14 @@ from app.models import (
     DisputeMessageStatus,
     Organization,
 )
+from app.services.carrier_contacts import resolve_carrier_email
 from app.services.disputes import build_dispute_draft_text
-from app.config import settings as app_settings
 from app.services.mail import (
     MailDeliveryError,
     MailSender,
-    default_mail_sender,
     get_mail_sender,
     outbound_mail_configured,
 )
-from app.services.carrier_contacts import resolve_carrier_email
 
 MAX_ROUNDS = 5
 TERMINAL_STATUSES = frozenset({DisputeCaseStatus.credited, DisputeCaseStatus.closed})
@@ -374,7 +373,8 @@ async def approve_and_send(
     if not message:
         raise ValueError("message_not_found")
     org = await session.scalar(select(Organization).where(Organization.id == organization_id))
-    settings_json = dict(org.settings_json or {}) if org else {}
+    if org is None:
+        raise ValueError("organization_not_found")
     carrier_code = None
     if case.discrepancy and case.discrepancy.trace_summary_json:
         carrier_code = case.discrepancy.trace_summary_json.get("carrier_code")

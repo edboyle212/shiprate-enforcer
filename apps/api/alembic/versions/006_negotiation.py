@@ -4,16 +4,17 @@ Revision ID: 006_negotiation
 Revises: 005_force_rls
 """
 
-from typing import Sequence, Union
+from collections.abc import Sequence
 
 import sqlalchemy as sa
-from alembic import op
 from sqlalchemy.dialects import postgresql
 
+from alembic import op
+
 revision: str = "006_negotiation"
-down_revision: Union[str, None] = "005_force_rls"
-branch_labels: Union[str, Sequence[str], None] = None
-depends_on: Union[str, Sequence[str], None] = None
+down_revision: str | None = "005_force_rls"
+branch_labels: str | Sequence[str] | None = None
+depends_on: str | Sequence[str] | None = None
 
 dispute_case_status_v2 = postgresql.ENUM(
     "open",

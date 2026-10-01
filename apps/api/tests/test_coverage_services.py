@@ -4,8 +4,7 @@ from __future__ import annotations
 
 import uuid
 from datetime import UTC, datetime
-from types import SimpleNamespace
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 from starlette.requests import Request
@@ -15,19 +14,17 @@ from app.db import set_rls_organization
 from app.middleware.tenancy import TenancyMiddleware
 from app.models import (
     CarrierInvoiceLine,
-    ComplianceCheck,
-    ComplianceCheckStatus,
     Discrepancy,
     DisputeCase,
     DisputeCaseStatus,
     DisputeDraft,
     DisputeDraftStatus,
+    MatchType,
     Organization,
     RateCardVersion,
     RateCardVersionStatus,
     Shipment,
     ShipmentInvoiceMatch,
-    MatchType,
     WmsPartner,
 )
 from app.services import disputes as dispute_service
@@ -40,7 +37,6 @@ from app.services.compliance import (
     tolerance_threshold_minor,
     trace_summary,
     within_tolerance,
-    ToleranceConfig,
 )
 from app.services.matching import (
     _match_type_for_trackings,
@@ -50,12 +46,12 @@ from app.services.matching import (
 )
 from app.services.partner_profiles import get_partner_profile, upsert_partner_profile
 from app.services.reporting import get_reporting_summary
-from app.services.storage import sha256_hex, StorageService
+from app.services.storage import StorageService, sha256_hex
 from tests.conftest import ORG_ID
 
 
 def test_all_models_reexport():
-    import app.models.all_models as all_models
+    from app.models import all_models
 
     assert "DisputeCase" in all_models.__all__
     assert all_models.Organization is not None
@@ -160,7 +156,7 @@ async def test_run_automatic_matching_exact():
     line = CarrierInvoiceLine(id=line_id, organization_id=ORG_ID, tracking_number="1ZTRACK", billed_amount_minor=100)
     session.scalars = AsyncMock(
         side_effect=[
-            MagicMock(all=lambda: []),
+            MagicMock(all=list),
             MagicMock(all=lambda: [shipment]),
             MagicMock(all=lambda: [line]),
         ]

@@ -2,16 +2,17 @@
 
 from __future__ import annotations
 
+from conftest import load_json_fixture
+
 from app.rating.engine import rate as rate_shipment
 from app.services.compliance import (
     DEFAULT_ABSOLUTE_TOLERANCE_MINOR,
+    ToleranceConfig,
     build_rating_request,
     derive_reason_codes,
     tolerance_threshold_minor,
     within_tolerance,
-    ToleranceConfig,
 )
-from conftest import load_json_fixture
 
 
 def test_default_tolerance_threshold_uses_absolute_floor():

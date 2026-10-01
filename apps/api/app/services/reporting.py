@@ -8,7 +8,13 @@ from dataclasses import dataclass
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models import ComplianceCheck, Discrepancy, DisputeCase, DisputeCaseStatus, ImportJob
+from app.models import (
+    ComplianceCheck,
+    Discrepancy,
+    DisputeCase,
+    DisputeCaseStatus,
+    ImportJob,
+)
 from app.services.negotiation import OPEN_DISPUTE_STATUSES
 
 

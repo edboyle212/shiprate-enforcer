@@ -6,7 +6,11 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from app.services.mail import ResendMailSender, body_for_delivery, outbound_mail_configured
+from app.services.mail import (
+    ResendMailSender,
+    body_for_delivery,
+    outbound_mail_configured,
+)
 
 
 def test_body_for_delivery_strips_draft_banner():

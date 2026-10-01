@@ -7,10 +7,15 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from app.models import ImportJob, ImportJobStatus, Organization, RateCardVersion, RateCardVersionStatus, Shipment
+from app.db import tenant as tenant_db
+from app.models import (
+    ImportJob,
+    ImportJobStatus,
+    RateCardVersion,
+    RateCardVersionStatus,
+)
 from app.services import import_jobs as import_jobs_service
 from app.services import rate_cards as rate_cards_service
-from app.db import tenant as tenant_db
 from tests.conftest import ORG_ID
 
 
