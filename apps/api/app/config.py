@@ -16,6 +16,13 @@ def _default_async_url() -> str:
 
 
 def _default_sync_url() -> str:
+    raw = os.environ.get("TEST_APP_DATABASE_URL")
+    if raw:
+        if raw.startswith("postgresql+asyncpg://"):
+            return raw.replace("postgresql+asyncpg://", "postgresql://", 1)
+        if raw.startswith("postgres://"):
+            return raw.replace("postgres://", "postgresql://", 1)
+        return raw
     raw = os.environ.get("DATABASE_URL") or os.environ.get("TEST_DATABASE_URL")
     if raw:
         if raw.startswith("postgresql+asyncpg://"):

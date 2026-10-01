@@ -12,6 +12,13 @@ BEGIN
 END
 $$;
 
+DO $$
+BEGIN
+  EXECUTE format('GRANT CONNECT ON DATABASE %I TO shiprate_app', current_database());
+  EXECUTE format('GRANT CONNECT ON DATABASE %I TO shiprate_migrator', current_database());
+END
+$$;
+
 GRANT USAGE ON SCHEMA public TO shiprate_app;
 GRANT USAGE ON SCHEMA public TO shiprate_migrator;
 

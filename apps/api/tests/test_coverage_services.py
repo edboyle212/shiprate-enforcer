@@ -62,11 +62,21 @@ def test_all_models_reexport():
 
 
 def test_config_database_url_variants(monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.delenv("TEST_APP_DATABASE_URL", raising=False)
     monkeypatch.setenv("DATABASE_URL", "postgresql://user:pass@localhost/db")
     assert "asyncpg" in _default_async_url()
     assert _default_sync_url().startswith("postgresql://")
     monkeypatch.setenv("DATABASE_URL", "postgres://user:pass@localhost/db")
     assert "asyncpg" in _default_async_url()
+    monkeypatch.setenv("DATABASE_URL", "postgresql+asyncpg://user:pass@localhost/db")
+    assert _default_sync_url().startswith("postgresql://user")
+    monkeypatch.setenv("TEST_APP_DATABASE_URL", "postgresql://shiprate_app:shiprate@localhost/shiprate_test")
+    assert _default_sync_url().startswith("postgresql://shiprate_app")
+    monkeypatch.setenv("TEST_APP_DATABASE_URL", "postgresql+asyncpg://shiprate_app:shiprate@localhost/x")
+    assert _default_sync_url().startswith("postgresql://shiprate_app")
+    monkeypatch.setenv("TEST_APP_DATABASE_URL", "postgres://shiprate_app:shiprate@localhost/x")
+    assert _default_sync_url().startswith("postgresql://shiprate_app")
+    monkeypatch.delenv("TEST_APP_DATABASE_URL", raising=False)
     monkeypatch.delenv("DATABASE_URL", raising=False)
     monkeypatch.delenv("TEST_DATABASE_URL", raising=False)
 

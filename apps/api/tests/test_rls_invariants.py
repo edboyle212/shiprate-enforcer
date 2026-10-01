@@ -89,6 +89,12 @@ def test_no_tenant_context_sees_zero_rows(sync_session: Session, tenant_db):
         shipment_id=SHIPMENT_ID,
         tracking_number="1ZRLS000000000001",
     )
+    again = create_shipment(
+        organization_id=ORG_A,
+        shipment_id=SHIPMENT_ID,
+        tracking_number="1ZRLS000000000001",
+    )
+    assert again.id == SHIPMENT_ID
     sync_session.execute(text("SELECT set_config('app.organization_id', '', true)"))
     row = sync_session.scalar(select(Shipment).where(Shipment.id == SHIPMENT_ID))
     assert row is None
