@@ -1,0 +1,33 @@
+---
+description: Shiprate Enforcer — Project-scoped agents, Context paths, local self-hosted defaults, product invariants
+alwaysApply: true
+---
+
+# Shiprate Project rules
+
+## Scope
+
+Shiprate feature work belongs to the **Shiprate Enforcer** Cursor Project. Read Project Context before large changes; this repo mirrors workflow docs in `docs/agent-workflow.md`.
+
+## Execution
+
+- Default: **self-hosted Mac** worker on this checkout (`~/Projects/shiprate-enforcer`).
+- **Builder** implements; **Tester** verifies with a **different model** than Builder.
+- Do not claim a slice done without test sign-off per `docs/testing.md`.
+
+## Context (read first)
+
+- `docs/shiprate-mvp-spec.md` — MVP scope and invariants
+- `docs/partner-variable-sheet.md`, `docs/etl-drop-contract.md`, `docs/wizard-field-lists.md`
+- `docs/testing.md` — pytest, Playwright, CI parity
+
+## Hard product rules
+
+- Money in **minor units**; rating engine is authoritative.
+- **No auto-send** dispute emails; drafts and human approval only.
+- **AI** assists column mapping only; it does not rate shipments or submit disputes.
+- **RLS:** respect tenant boundaries; never bypass org context in API or tests.
+
+## Edward-facing UX
+
+When giving Edward instructions in this repo, follow `.cursor/rules/how-we-work.mdc` (one step, plain English).
