@@ -1,5 +1,7 @@
 import Link from "next/link";
 
+import { DEMO_PARTNER_SLUG } from "@/lib/demo-partner";
+
 export default function Home() {
   return (
     <div className="min-h-screen bg-slate-950 text-slate-50 flex flex-col items-center justify-center px-6">
@@ -33,19 +35,19 @@ export default function Home() {
           Discrepancies
         </Link>
         <Link
-          href="/partner/jasci/onboarding"
+          href={`/partner/${DEMO_PARTNER_SLUG}/onboarding`}
           className="rounded-lg border border-slate-700 px-5 py-3 text-sm text-center"
         >
           Partner onboarding (demo)
         </Link>
         <Link
-          href="/partner/jasci/accounts"
+          href={`/partner/${DEMO_PARTNER_SLUG}/accounts`}
           className="rounded-lg border border-slate-700 px-5 py-3 text-sm text-center"
         >
           Partner accounts
         </Link>
         <Link
-          href="/p/jasci/onboarding"
+          href={`/p/${DEMO_PARTNER_SLUG}/onboarding`}
           className="rounded-lg border border-slate-700 px-5 py-3 text-sm text-center"
         >
           Client upload wizard (demo)

@@ -1,8 +1,9 @@
 import { test, expect } from "@playwright/test";
 
+import { DEMO_ORG_ID, DEMO_PARTNER_SLUG } from "../lib/demo-partner";
 import { ORG_SESSION_KEY } from "../lib/session";
 
-const DEMO_ORG = "01950000-0000-7000-8000-000000000001";
+const DEMO_ORG = DEMO_ORG_ID;
 
 const APP_ROUTES = [
   { path: "/", title: /Shiprate Enforcer/i },
@@ -10,8 +11,8 @@ const APP_ROUTES = [
   { path: "/imports", title: /Import/i },
   { path: "/discrepancies", title: /Discrepanc/i },
   { path: "/account", title: /Account/i },
-  { path: "/partner/jasci/onboarding", title: /onboarding|partner/i },
-  { path: "/partner/jasci/accounts", title: /account|partner/i },
+  { path: `/partner/${DEMO_PARTNER_SLUG}/onboarding`, title: /onboarding|partner/i },
+  { path: `/partner/${DEMO_PARTNER_SLUG}/accounts`, title: /account|partner/i },
 ];
 
 test.describe("app pages", () => {

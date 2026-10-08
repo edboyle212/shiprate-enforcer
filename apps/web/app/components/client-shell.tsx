@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState, type ReactNode } from "react";
 
 import { getOrganizationProfile } from "@/lib/api";
+import { DEMO_PARTNER_SLUG } from "@/lib/demo-partner";
 import { useOrgId } from "@/lib/session";
 
 const NAV = [
@@ -73,7 +74,10 @@ export function EmptyAccount({ variant = "dark" }: { variant?: Variant }) {
   return (
     <p className={`px-6 py-8 text-sm ${dark ? "text-slate-400" : "text-slate-600"}`}>
       No account is open.{" "}
-      <Link href="/p/jasci/onboarding" className={dark ? "text-emerald-400 underline" : "text-emerald-700 underline"}>
+      <Link
+        href={`/p/${DEMO_PARTNER_SLUG}/onboarding`}
+        className={dark ? "text-emerald-400 underline" : "text-emerald-700 underline"}
+      >
         Start warehouse setup
       </Link>
       .

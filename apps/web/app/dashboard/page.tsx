@@ -31,7 +31,7 @@ function DashboardBody({ orgId }: { orgId: string }) {
     };
   }, [orgId]);
 
-  const wizardHref = `/p/${profile?.partner_id ?? "jasci"}/onboarding?org=${orgId}`;
+  const wizardHref = `/p/${profile?.partner_id ?? "northstar"}/onboarding?org=${orgId}`;
 
   return (
     <main className="mx-auto max-w-4xl px-6 py-8">
