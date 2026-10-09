@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Shiprate Enforcer — home</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  body{margin:0}
+  :root{
+    --bg:#F4F6F8; --surface:#FFFFFF; --surface-2:#FBFCFD;
+    --ink:#161A1E; --ink-2:#48525B; --ink-3:#616C76;
+    --line:#E2E7EB; --line-2:#EEF1F4;
+    --attention:#B45309; --attention-bg:#FBF1E4;
+    --pos:#136F4E; --pos-bg:#E7F3EC; --info:#1F5FA8; --info-bg:#E8F0FA;
+    --sans:'IBM Plex Sans',system-ui,sans-serif; --mono:'IBM Plex Mono',ui-monospace,monospace;
+  }
+  a{text-decoration:none}
+  button:focus-visible,a:focus-visible{outline:2px solid #0C757F;outline-offset:2px}
+</style>
+</head>
+<body>
+<div style="min-height:100vh;background:var(--bg);font-family:var(--sans);color:var(--ink);box-sizing:border-box">
+
+  <!-- Top bar -->
+  <header style="display:flex;flex-wrap:wrap;gap:16px;align-items:center;justify-content:space-between;background:var(--surface);border-bottom:1px solid var(--line);padding:14px 32px">
+    <div style="display:flex;align-items:center;gap:14px">
+      <div style="display:flex;align-items:center;gap:9px">
+        <span style="width:22px;height:22px;border-radius:6px;background:#0C757F"></span>
+        <span style="font-weight:700;font-size:15px">Northstar WMS</span>
+      </div>
+      <span style="width:1px;height:20px;background:var(--line)"></span>
+      <span style="display:inline-flex;align-items:center;gap:7px;font-size:12px;color:var(--ink-3)">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#616C76" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7l9-4 9 4-9 4-9-4z"/><path d="M3 7v10l9 4 9-4V7"/></svg>
+        Shiprate Enforcer
+      </span>
+    </div>
+    <div style="display:flex;align-items:center;gap:12px">
+      <span style="font-size:13px;color:var(--ink-2)">Harbor Freight Desk</span>
+      <span style="width:30px;height:30px;border-radius:50%;background:var(--surface-2);border:1px solid var(--line);display:inline-flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;color:var(--ink-2)">RM</span>
+    </div>
+  </header>
+
+  <!-- Body -->
+  <main style="max-width:1080px;margin:0 auto;padding:40px 32px 56px;display:flex;flex-direction:column;gap:32px">
+
+    <div style="display:flex;flex-direction:column;gap:6px">
+      <h1 style="margin:0;font-size:26px;font-weight:700;letter-spacing:-.015em">Good morning, Ray</h1>
+      <p style="margin:0;font-size:14px;color:var(--ink-2)">Harbor Freight Desk · UPS &amp; FedEx · last import 2 hours ago</p>
+    </div>
+
+    <!-- Snapshot strip -->
+    <section style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(200px,100%),1fr));gap:14px">
+      <div style="background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px;display:flex;flex-direction:column;gap:4px">
+        <span style="font-size:12px;color:var(--ink-2)">Open overcharge</span>
+        <span style="font-family:var(--mono);font-size:22px;font-weight:600;letter-spacing:-.02em">$4,210.00</span>
+      </div>
+      <div style="background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px;display:flex;flex-direction:column;gap:4px">
+        <span style="font-size:12px;color:var(--ink-2)">Flagged rows</span>
+        <span style="font-family:var(--mono);font-size:22px;font-weight:600;letter-spacing:-.02em">38</span>
+      </div>
+      <div style="background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px;display:flex;flex-direction:column;gap:4px">
+        <span style="font-size:12px;color:var(--ink-2)">Open disputes</span>
+        <span style="font-family:var(--mono);font-size:22px;font-weight:600;letter-spacing:-.02em">6</span>
+      </div>
+      <div style="background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px;display:flex;flex-direction:column;gap:4px">
+        <span style="font-size:12px;color:var(--ink-2)">Recovered (90d)</span>
+        <span style="font-family:var(--mono);font-size:22px;font-weight:600;letter-spacing:-.02em;color:var(--pos)">$12,980.00</span>
+      </div>
+    </section>
+
+    <!-- Entry cards -->
+    <section style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(300px,100%),1fr));gap:18px">
+      <a href="Dashboard.html" style="background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:24px;display:flex;flex-direction:column;gap:14px;color:inherit">
+        <span style="width:40px;height:40px;border-radius:10px;background:#0C757F;display:inline-flex;align-items:center;justify-content:center">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 15l4-5 3 3 4-6"/></svg>
+        </span>
+        <div style="display:flex;flex-direction:column;gap:5px">
+          <span style="font-size:17px;font-weight:700">Open the daily app</span>
+          <span style="font-size:13px;color:var(--ink-2);line-height:1.5">Dashboard, imports, and the discrepancies waiting for review.</span>
+        </div>
+        <span style="font-size:13px;font-weight:600;color:#0C757F;display:inline-flex;align-items:center;gap:6px">Go to dashboard
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M13 6l6 6-6 6"/></svg>
+        </span>
+      </a>
+
+      <a href="PartnerBranding.html" style="background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:24px;display:flex;flex-direction:column;gap:14px;color:inherit">
+        <span style="width:40px;height:40px;border-radius:10px;background:var(--surface-2);border:1px solid var(--line);display:inline-flex;align-items:center;justify-content:center">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#48525B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.4 5 5.6.6-4.2 3.8 1.2 5.6L12 19.3 7 17l1.2-5.6L4 7.6 9.6 7z"/></svg>
+        </span>
+        <div style="display:flex;flex-direction:column;gap:5px">
+          <span style="font-size:17px;font-weight:700">Partner setup</span>
+          <span style="font-size:13px;color:var(--ink-2);line-height:1.5">Branding, how warehouses export, carriers, and invite links. Admin only.</span>
+        </div>
+        <span style="font-size:13px;font-weight:600;color:var(--ink-2);display:inline-flex;align-items:center;gap:6px">Manage partner
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M13 6l6 6-6 6"/></svg>
+        </span>
+      </a>
+    </section>
+
+    <!-- Recent activity -->
+    <section style="display:flex;flex-direction:column;gap:12px">
+      <div style="display:flex;justify-content:space-between;align-items:baseline">
+        <h2 style="margin:0;font-size:14px;font-weight:700">Recent activity</h2>
+        <a href="DiscrepancyList.html" style="font-size:13px;color:#0C757F;font-weight:600">View all discrepancies</a>
+      </div>
+      <div style="background:var(--surface);border:1px solid var(--line);border-radius:12px;overflow:hidden">
+        <a href="DiscrepancyDetail.html" style="display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--line-2);color:inherit">
+          <span style="display:flex;align-items:center;gap:10px"><span style="width:7px;height:7px;border-radius:50%;background:var(--attention)"></span><span style="font-family:var(--mono);font-size:13px">1Z999AA10123456784</span><span style="font-size:12px;color:var(--ink-3)">UPS Ground · zone 5</span></span>
+          <span style="display:flex;align-items:center;gap:14px"><span style="font-family:var(--mono);font-size:13px;color:var(--attention);font-weight:600">+$10.00</span><span style="font-size:12px;font-weight:600;color:var(--info);background:var(--info-bg);border-radius:999px;padding:2px 10px">Open</span></span>
+        </a>
+        <div style="display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--line-2)">
+          <span style="display:flex;align-items:center;gap:10px"><span style="width:7px;height:7px;border-radius:50%;background:var(--pos)"></span><span style="font-size:13px;color:var(--ink-2)">Dispute DSP-0418 recovered</span></span>
+          <span style="font-family:var(--mono);font-size:13px;color:var(--pos);font-weight:600">+$84.20</span>
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;padding:14px 18px">
+          <span style="display:flex;align-items:center;gap:10px"><span style="width:7px;height:7px;border-radius:50%;background:var(--ink-3)"></span><span style="font-size:13px;color:var(--ink-2)">Carrier invoice imported · 1,204 lines matched</span></span>
+          <span style="font-size:12px;color:var(--ink-3)">2h ago</span>
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+</body>
+</html>
