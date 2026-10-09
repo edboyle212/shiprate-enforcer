@@ -4,6 +4,8 @@ import Link from "next/link";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 
+import { StatusPill } from "@/app/components/ui/status-pill";
+import { DEFAULT_ACCENT, partnerAccentStyle } from "@/lib/accent-vars";
 import {
   createImportJob,
   createOrganization,
@@ -13,12 +15,12 @@ import {
 } from "@/lib/api";
 import { writeOrgId } from "@/lib/session";
 
-const STEPS = ["Organization", "Carriers", "Uploads", "Policy", "Done"];
+const STEPS = ["Warehouse", "Carriers", "Upload", "Dashboard"];
 
 const UPLOAD_KINDS = [
-  { label: "Carrier invoices", kind: "carrier_invoice" as const },
-  { label: "Shipment export", kind: "shipment_export" as const },
-  { label: "Rate card / contract", kind: "rate_card" as const },
+  { label: "Carrier invoice", kind: "carrier_invoice" as const, required: true },
+  { label: "Shipment export", kind: "shipment_export" as const, required: true },
+  { label: "Rate card / contract", kind: "rate_card" as const, required: false },
 ];
 
 export default function ClientOnboardingInner() {
@@ -34,6 +36,7 @@ export default function ClientOnboardingInner() {
     primary_color?: string;
     logo_url?: string;
   } | null>(null);
+  const [uploadState, setUploadState] = useState<Record<string, "idle" | "uploaded">>({});
   const [uploadStatus, setUploadStatus] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -41,7 +44,8 @@ export default function ClientOnboardingInner() {
     loadPublicBranding(params.partnerSlug).then(setBranding);
   }, [params.partnerSlug]);
 
-  const accent = branding?.primary_color ?? "#0f766e";
+  const accentStyle = partnerAccentStyle(branding?.primary_color ?? DEFAULT_ACCENT);
+  const displayName = branding?.display_name ?? params.partnerSlug;
 
   async function ensureOrg() {
     if (orgId) return orgId;
@@ -58,7 +62,8 @@ export default function ClientOnboardingInner() {
       const id = await ensureOrg();
       const source = await uploadSourceFile(id, kind, file);
       await createImportJob(id, source.id, `${kind}:${source.sha256_hex}`);
-      setUploadStatus(`Uploaded ${file.name} (${kind})`);
+      setUploadState((s) => ({ ...s, [kind]: "uploaded" }));
+      setUploadStatus(`Uploaded ${file.name}`);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Upload failed");
     }
@@ -80,120 +85,164 @@ export default function ClientOnboardingInner() {
     }
   }
 
-  return (
-    <div className="min-h-screen bg-white text-slate-900">
-      <header className="border-b px-6 py-6" style={{ borderBottomColor: accent }}>
-        <div className="flex items-center gap-3">
-          {branding?.logo_url ? (
-            <img src={branding.logo_url} alt="" className="h-8 w-auto object-contain" />
-          ) : null}
-          <p className="text-sm text-slate-500">{branding?.display_name ?? params.partnerSlug}</p>
-        </div>
-        <h1 className="text-2xl font-semibold">Warehouse rate compliance setup</h1>
-      </header>
-      <main className="mx-auto max-w-xl px-6 py-10">
-        <ol className="mb-8 flex flex-wrap gap-2 text-xs">
-          {STEPS.map((label, i) => (
-            <li
-              key={label}
-              className={`rounded-full px-3 py-1 ${i === step ? "text-white" : "bg-slate-100"}`}
-              style={i === step ? { backgroundColor: accent } : undefined}
-            >
-              {label}
-            </li>
-          ))}
-        </ol>
+  const inputStyle = {
+    display: "block",
+    width: "100%",
+    marginTop: 6,
+    padding: "8px 10px",
+    borderRadius: 8,
+    border: "1px solid var(--line)",
+    fontSize: 14,
+  };
 
+  return (
+    <div className="sr-app" style={{ minHeight: "100vh", ...accentStyle }}>
+      <header style={{ background: "var(--surface)", borderBottom: "1px solid var(--line)", padding: "20px 24px" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
+          {branding?.logo_url ? (
+            <img src={branding.logo_url} alt="" style={{ height: 32, objectFit: "contain" }} />
+          ) : (
+            <span style={{ width: 32, height: 32, borderRadius: 8, background: "var(--accent)" }} />
+          )}
+          <div>
+            <div style={{ fontWeight: 700 }}>{displayName}</div>
+            <div style={{ fontSize: 11, color: "var(--ink-3)" }}>Shiprate Enforcer</div>
+          </div>
+        </div>
+        <h1 style={{ margin: 0, fontSize: 20, fontWeight: 700 }}>Warehouse rate compliance setup</h1>
+      </header>
+
+      <div style={{ overflowX: "auto", borderBottom: "1px solid var(--line)", background: "var(--surface)" }}>
+        <ol style={{ display: "flex", gap: 20, listStyle: "none", margin: 0, padding: "14px 24px", minWidth: "max-content" }}>
+          {STEPS.map((label, i) => {
+            const done = i < step;
+            const current = i === step;
+            return (
+              <li key={label} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13 }}>
+                <span
+                  style={{
+                    width: 26,
+                    height: 26,
+                    borderRadius: "50%",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    fontWeight: 700,
+                    fontSize: 11,
+                    background: done || current ? "var(--accent)" : "transparent",
+                    color: done || current ? "var(--accent-ink)" : "var(--ink-3)",
+                    border: done || current ? "none" : "1px solid var(--line)",
+                  }}
+                >
+                  {done ? "✓" : i + 1}
+                </span>
+                <span style={{ fontWeight: current ? 700 : 500 }}>{label}</span>
+              </li>
+            );
+          })}
+        </ol>
+      </div>
+
+      <main style={{ maxWidth: 640, margin: "0 auto", padding: "32px 24px" }}>
         {step === 0 && (
-          <div className="space-y-4">
-            <label className="block text-sm">
-              Organization name
-              <input
-                className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2"
-                value={orgName}
-                onChange={(e) => setOrgName(e.target.value)}
-              />
+          <div className="sr-panel">
+            <label style={{ fontSize: 13 }}>
+              Warehouse name
+              <input style={inputStyle} value={orgName} onChange={(e) => setOrgName(e.target.value)} />
             </label>
             {orgId && (
-              <p className="text-xs text-slate-500">
-                Org ID: <code>{orgId}</code>
+              <p style={{ fontSize: 12, color: "var(--ink-3)", marginTop: 12 }}>
+                Org ID: <code className="sr-mono">{orgId}</code>
               </p>
             )}
           </div>
         )}
 
         {step === 1 && (
-          <label className="block text-sm">
-            Carriers you bill with (comma-separated)
-            <input
-              className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2"
-              value={carriers}
-              onChange={(e) => setCarriers(e.target.value)}
-              placeholder="UPS, FedEx, USPS"
-            />
-          </label>
+          <div className="sr-panel">
+            <label style={{ fontSize: 13 }}>
+              Carriers you bill with (comma-separated)
+              <input
+                style={inputStyle}
+                value={carriers}
+                onChange={(e) => setCarriers(e.target.value)}
+                placeholder="UPS, FedEx, USPS"
+              />
+            </label>
+          </div>
         )}
 
         {step === 2 && (
-          <div className="space-y-6">
-            {UPLOAD_KINDS.map(({ label, kind }) => (
-              <label key={kind} className="block rounded-lg border border-dashed border-slate-300 p-4 text-sm">
-                {label}
-                <input
-                  type="file"
-                  className="mt-2 block w-full text-xs"
-                  onChange={(e) => {
-                    const f = e.target.files?.[0];
-                    if (f) void onUpload(kind, f);
-                  }}
-                />
-              </label>
+          <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+            {UPLOAD_KINDS.map(({ label, kind, required }) => (
+              <div key={kind} className="sr-panel" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12 }}>
+                <div>
+                  <p style={{ margin: 0, fontWeight: 600, fontSize: 14 }}>{label}</p>
+                  <p style={{ margin: "4px 0 0", fontSize: 12, color: "var(--ink-3)" }}>{required ? "Required" : "Optional"}</p>
+                </div>
+                {uploadState[kind] === "uploaded" ? (
+                  <StatusPill status="uploaded" />
+                ) : (
+                  <label className="sr-btn-secondary" style={{ cursor: "pointer", margin: 0 }}>
+                    Upload
+                    <input
+                      type="file"
+                      accept=".csv,.xlsx"
+                      style={{ display: "none" }}
+                      onChange={(e) => {
+                        const f = e.target.files?.[0];
+                        if (f) void onUpload(kind, f);
+                      }}
+                    />
+                  </label>
+                )}
+              </div>
             ))}
-            {uploadStatus && <p className="text-sm text-emerald-700">{uploadStatus}</p>}
-            {error && <p className="text-sm text-red-600">{error}</p>}
+            <p style={{ fontSize: 12, color: "var(--ink-2)" }}>
+              Amounts are read verbatim from your files. You will confirm column mapping next in the import center.
+            </p>
+            {uploadStatus && <p style={{ fontSize: 13, color: "var(--pos)" }}>{uploadStatus}</p>}
+            {error && <p style={{ fontSize: 13, color: "var(--danger)" }}>{error}</p>}
           </div>
         )}
 
         {step === 3 && (
-          <p className="text-sm text-slate-600">
-            Default tolerances: $5.00 absolute or 2% per line (editable in admin later). Click continue to save.
-          </p>
+          <div className="sr-panel">
+            <p style={{ fontSize: 14 }}>Setup complete. Continue to the dashboard or open imports to confirm mapping.</p>
+          </div>
         )}
 
-        {step === 4 && (
-          <p className="text-sm text-slate-600">
-            Setup complete. Mapping confirmation and compliance runs continue in the import center (next slice).
-          </p>
-        )}
+        {error && step !== 2 && <p style={{ marginTop: 16, fontSize: 13, color: "var(--danger)" }}>{error}</p>}
 
-        {error && step !== 2 && <p className="mt-4 text-sm text-red-600">{error}</p>}
-
-        <div className="mt-8 flex justify-between">
-          <button
-            type="button"
-            className="text-sm text-slate-600 disabled:opacity-40"
-            disabled={step === 0}
-            onClick={() => setStep(step - 1)}
-          >
-            Previous
+        <div style={{ marginTop: 24, display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
+          <button type="button" className="sr-btn-secondary" disabled={step === 0} onClick={() => setStep(step - 1)}>
+            Back
           </button>
-          <button
-            type="button"
-            className="rounded-md px-4 py-2 text-sm text-white"
-            style={{ backgroundColor: accent }}
-            onClick={() => {
-              if (step === 3) void finishOnboarding();
-              else setStep(Math.min(step + 1, STEPS.length - 1));
-            }}
-          >
-            {step === 3 ? "Save & finish" : step === STEPS.length - 1 ? "Done" : "Next"}
-          </button>
+          <div style={{ display: "flex", gap: 10 }}>
+            {step === 2 && (
+              <Link href="/imports" className="sr-btn-secondary">Continue to mapping</Link>
+            )}
+            {step === 2 && (
+              <button type="button" className="sr-btn-secondary" onClick={() => router.push("/dashboard")}>
+                Skip to dashboard
+              </button>
+            )}
+            <button
+              type="button"
+              className="sr-btn-primary"
+              onClick={() => {
+                if (step === 3) void finishOnboarding();
+                else if (step === 2) setStep(3);
+                else setStep(Math.min(step + 1, STEPS.length - 1));
+              }}
+            >
+              {step === 3 ? "Save & finish" : "Continue"}
+            </button>
+          </div>
         </div>
 
-        <p className="mt-10 text-sm">
-          <Link href="/" className="underline" style={{ color: accent }}>
-            Home
-          </Link>
+        <p style={{ marginTop: 32, fontSize: 13 }}>
+          <Link href="/" className="sr-link-accent">Home</Link>
         </p>
       </main>
     </div>

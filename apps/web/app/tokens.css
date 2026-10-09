@@ -1,0 +1,45 @@
+/* Shiprate Enforcer — design tokens
+ * White-label: every surface is neutral; ONE partner accent recolors the chrome.
+ * To rebrand a partner, change --accent (and --accent-weak) only. Nothing else moves.
+ * Demo partner: Northstar WMS, teal (#0C757F).
+ */
+:root {
+  /* Partner accent — the only per-partner value */
+  --accent:        #0C757F;   /* Northstar teal; white text passes AA on this */
+  --accent-weak:   #0C757F14; /* ~8% tint for active nav / selected rows */
+  --accent-ink:    #FFFFFF;   /* text/icons on --accent */
+
+  /* Neutral surfaces */
+  --bg:        #F4F6F8;  /* app ground */
+  --surface:   #FFFFFF;  /* cards, bars */
+  --surface-2: #FBFCFD;  /* insets, footers */
+
+  /* Text */
+  --ink:   #161A1E;  /* primary */
+  --ink-2: #48525B;  /* secondary — AA on --surface */
+  --ink-3: #616C76;  /* muted — AA on --surface at >=12px; do not go lighter */
+
+  /* Lines */
+  --line:   #E2E7EB;
+  --line-2: #EEF1F4;
+
+  /* Money / attention — overcharge & variance ALWAYS use --attention, never red/green */
+  --attention:    #B45309;
+  --attention-bg: #FBF1E4;
+
+  /* Status (differ in lightness + hue; dark text on light tint) */
+  --pos:    #136F4E; --pos-bg:    #E7F3EC;  /* approved / recovered / confirmed */
+  --info:   #1F5FA8; --info-bg:   #E8F0FA;  /* open */
+  --hold:   #8A5A00; --hold-bg:   #FBF2DC;  /* on hold / suggested / draft */
+  --danger: #B42334; --danger-bg: #FBE9EB;  /* rejected / error */
+
+  /* Type */
+  --sans: 'IBM Plex Sans', system-ui, sans-serif;
+  --mono: 'IBM Plex Mono', ui-monospace, monospace; /* money, tracking numbers, trace */
+
+  /* Radii */
+  --r-sm: 8px; --r-md: 10px; --r-lg: 14px; --r-pill: 999px;
+
+  /* Focus */
+  --focus: 2px solid var(--accent);
+}

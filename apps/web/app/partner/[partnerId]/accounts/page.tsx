@@ -53,16 +53,16 @@ export default function PartnerAccountsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-50">
-      <header className="border-b border-slate-800 px-6 py-4">
-        <p className="text-sm text-slate-400">Partner admin</p>
+    <div className="sr-app" style={{ minHeight: "100vh" }}>
+      <header style={{ background: "var(--surface)", borderBottom: "1px solid var(--line)", padding: "16px 24px" }}>
+        <p style={{ fontSize: 13, color: "var(--ink-3)" }}>Partner admin</p>
         <h1 className="text-2xl font-semibold">Accounts — {partnerId}</h1>
         <p className="mt-2 text-sm">
-          <Link href={`/partner/${partnerId}/onboarding`} className="text-emerald-400 hover:underline">
+          <Link href={`/partner/${partnerId}/onboarding`} className="sr-link-accent">
             Partner setup
           </Link>
           {" · "}
-          <Link href="/" className="text-slate-400 hover:underline">
+          <Link href="/" style={{ color: "var(--ink-2)" }}>
             Home
           </Link>
         </p>

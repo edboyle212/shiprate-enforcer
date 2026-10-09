@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Shiprate Enforcer — import center</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  body{margin:0}
+  :root{
+    --bg:#F4F6F8; --surface:#FFFFFF; --surface-2:#FBFCFD;
+    --ink:#161A1E; --ink-2:#48525B; --ink-3:#616C76;
+    --line:#E2E7EB; --line-2:#EEF1F4;
+    --attention:#B45309; --attention-bg:#FBF1E4;
+    --pos:#136F4E; --pos-bg:#E7F3EC; --info:#1F5FA8; --info-bg:#E8F0FA;
+    --hold:#8A5A00; --hold-bg:#FBF2DC; --danger:#B42334; --danger-bg:#FBE9EB;
+    --sans:'IBM Plex Sans',system-ui,sans-serif; --mono:'IBM Plex Mono',ui-monospace,monospace;
+  }
+  a{text-decoration:none}
+  .nav-item{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:9px;font-size:13.5px;color:var(--ink-2);font-weight:500}
+  .nav-item.active{background:#0C757F14;color:#0C757F;font-weight:600}
+  select{font-family:var(--sans);font-size:13px;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:7px 10px;width:100%;box-sizing:border-box}
+  button:focus-visible,a:focus-visible,select:focus-visible{outline:2px solid #0C757F;outline-offset:2px}
+</style>
+</head>
+<body>
+<div style="min-height:100vh;background:var(--bg);font-family:var(--sans);color:var(--ink);display:flex;flex-wrap:wrap">
+
+  <!-- Sidebar -->
+  <aside style="flex:0 0 232px;min-width:200px;background:var(--surface);border-right:1px solid var(--line);padding:18px 16px;display:flex;flex-direction:column;gap:22px;box-sizing:border-box">
+    <div style="display:flex;align-items:center;gap:9px;padding:4px 6px">
+      <span style="width:24px;height:24px;border-radius:7px;background:#0C757F"></span>
+      <div style="display:flex;flex-direction:column;line-height:1.1"><span style="font-weight:700;font-size:14px">Northstar WMS</span><span style="font-size:10.5px;color:var(--ink-3)">Shiprate Enforcer</span></div>
+    </div>
+    <nav style="display:flex;flex-direction:column;gap:3px">
+      <a href="Dashboard.html" class="nav-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 15l4-5 3 3 4-6"/></svg>Dashboard</a>
+      <a href="ImportCenter.html" class="nav-item active"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4"/><path d="M7 9l5-5 5 5"/><path d="M20 16v3a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-3"/></svg>Imports</a>
+      <a href="DiscrepancyList.html" class="nav-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16"/><path d="M4 12h16"/><path d="M4 18h10"/></svg>Discrepancies</a>
+      <a href="Home.html" class="nav-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>Account</a>
+    </nav>
+  </aside>
+
+  <!-- Main -->
+  <main style="flex:999 1 560px;min-width:0;padding:24px 32px 48px;display:flex;flex-direction:column;gap:22px">
+    <header style="display:flex;flex-direction:column;gap:3px">
+      <h1 style="margin:0;font-size:22px;font-weight:700;letter-spacing:-.01em">Import center</h1>
+      <span style="font-size:13px;color:var(--ink-2)">Bring in your shipment export and the carrier invoice. The app matches them and compares against your rate card — it never changes the billed amounts.</span>
+    </header>
+
+    <!-- Upload tiles -->
+    <section style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(260px,100%),1fr));gap:14px">
+      <!-- shipment export: uploaded -->
+      <div style="background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px;display:flex;flex-direction:column;gap:10px">
+        <div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:13px;font-weight:700">Shipment export</span><span style="font-size:11px;font-weight:600;color:var(--pos);background:var(--pos-bg);border-radius:999px;padding:2px 9px">Uploaded</span></div>
+        <div style="display:flex;align-items:center;gap:9px;background:var(--surface-2);border:1px solid var(--line);border-radius:9px;padding:9px 11px">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#48525B" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>
+          <span style="display:flex;flex-direction:column;line-height:1.2"><span style="font-size:12.5px;font-weight:500">harbor_shipments_0930.csv</span><span style="font-size:11px;color:var(--ink-3)">1,204 rows · mapped</span></span>
+        </div>
+      </div>
+
+      <!-- carrier invoice: just uploaded, needs mapping -->
+      <div style="background:var(--surface);border:1.5px solid #0C757F;border-radius:12px;padding:16px;display:flex;flex-direction:column;gap:10px">
+        <div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:13px;font-weight:700">Carrier invoice</span><span style="font-size:11px;font-weight:600;color:var(--hold);background:var(--hold-bg);border-radius:999px;padding:2px 9px">Confirm mapping</span></div>
+        <div style="display:flex;align-items:center;gap:9px;background:var(--surface-2);border:1px solid var(--line);border-radius:9px;padding:9px 11px">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#48525B" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>
+          <span style="display:flex;flex-direction:column;line-height:1.2"><span style="font-size:12.5px;font-weight:500">ups_invoice_wk40.csv</span><span style="font-size:11px;color:var(--ink-3)">1,190 lines · review below</span></span>
+        </div>
+      </div>
+
+      <!-- rate card: empty -->
+      <div style="background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px;display:flex;flex-direction:column;gap:10px">
+        <div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:13px;font-weight:700">Rate card</span><span style="font-size:11px;font-weight:600;color:var(--ink-3);background:var(--line-2);border-radius:999px;padding:2px 9px">On file</span></div>
+        <button style="font-family:var(--sans);border:1.5px dashed var(--line);background:var(--surface);border-radius:9px;padding:12px;display:flex;flex-direction:column;align-items:center;gap:5px;cursor:pointer">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#616C76" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4"/><path d="M7 9l5-5 5 5"/><path d="M20 16v3a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-3"/></svg>
+          <span style="font-size:12px;color:var(--ink-2)">Replace rate card</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- COLUMN MAPPING CONFIRM -->
+    <section style="background:var(--surface);border:1px solid var(--line);border-radius:14px;overflow:hidden">
+      <div style="display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;padding:18px 20px;border-bottom:1px solid var(--line-2)">
+        <div style="display:flex;flex-direction:column;gap:3px">
+          <h2 style="margin:0;font-size:15px;font-weight:700">Confirm columns — ups_invoice_wk40.csv</h2>
+          <span style="font-size:12.5px;color:var(--ink-2)">We suggested a mapping from your headers. Check each one, then confirm.</span>
+        </div>
+        <span style="display:inline-flex;align-items:center;gap:7px;font-size:12px;font-weight:600;color:var(--hold);background:var(--hold-bg);border-radius:999px;padding:5px 12px">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#8A5A00" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4"/><path d="M12 17h.01"/><circle cx="12" cy="12" r="9"/></svg>
+          Suggested — not saved yet
+        </span>
+      </div>
+
+      <!-- mapping table -->
+      <div style="overflow-x:auto">
+      <table style="width:100%;border-collapse:collapse;min-width:640px">
+        <thead>
+          <tr style="text-align:left">
+            <th style="font-size:11px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-3);padding:10px 20px">Your column</th>
+            <th style="font-size:11px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-3);padding:10px 20px">Maps to field</th>
+            <th style="font-size:11px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-3);padding:10px 20px">Sample</th>
+            <th style="font-size:11px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-3);padding:10px 20px">Status</th>
+          </tr>
+        </thead>
+        <tbody style="font-size:13px">
+          <tr style="border-top:1px solid var(--line-2)">
+            <td style="padding:12px 20px;font-family:var(--mono);font-size:12.5px">Tracking No.</td>
+            <td style="padding:12px 20px"><label style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)" for="m1">Field for Tracking No.</label><select id="m1"><option>Tracking number</option><option>Reference</option><option>Ignore</option></select></td>
+            <td style="padding:12px 20px;font-family:var(--mono);font-size:12px;color:var(--ink-2)">1Z999AA101…</td>
+            <td style="padding:12px 20px"><span style="font-size:11px;font-weight:600;color:var(--pos);background:var(--pos-bg);border-radius:999px;padding:2px 9px">Confirmed</span></td>
+          </tr>
+          <tr style="border-top:1px solid var(--line-2)">
+            <td style="padding:12px 20px;font-family:var(--mono);font-size:12.5px">Bill Wgt</td>
+            <td style="padding:12px 20px"><label style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)" for="m2">Field for Bill Wgt</label><select id="m2"><option>Weight (lb)</option><option>Dim weight</option><option>Ignore</option></select></td>
+            <td style="padding:12px 20px;font-family:var(--mono);font-size:12px;color:var(--ink-2)">8.0</td>
+            <td style="padding:12px 20px"><span style="font-size:11px;font-weight:600;color:var(--hold);background:var(--hold-bg);border-radius:999px;padding:2px 9px">Suggested</span></td>
+          </tr>
+          <tr style="border-top:1px solid var(--line-2)">
+            <td style="padding:12px 20px;font-family:var(--mono);font-size:12.5px">Svc</td>
+            <td style="padding:12px 20px"><label style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)" for="m3">Field for Svc</label><select id="m3"><option>Service level</option><option>Carrier</option><option>Ignore</option></select></td>
+            <td style="padding:12px 20px;font-family:var(--mono);font-size:12px;color:var(--ink-2)">GND</td>
+            <td style="padding:12px 20px"><span style="font-size:11px;font-weight:600;color:var(--hold);background:var(--hold-bg);border-radius:999px;padding:2px 9px">Suggested</span></td>
+          </tr>
+          <tr style="border-top:1px solid var(--line-2)">
+            <td style="padding:12px 20px;font-family:var(--mono);font-size:12.5px">Net Chg</td>
+            <td style="padding:12px 20px"><label style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)" for="m4">Field for Net Chg</label><select id="m4"><option>Billed amount</option><option>List amount</option><option>Ignore</option></select></td>
+            <td style="padding:12px 20px;font-family:var(--mono);font-size:12px;color:var(--ink-2)">15.00</td>
+            <td style="padding:12px 20px"><span style="font-size:11px;font-weight:600;color:var(--pos);background:var(--pos-bg);border-radius:999px;padding:2px 9px">Confirmed</span></td>
+          </tr>
+          <tr style="border-top:1px solid var(--line-2)">
+            <td style="padding:12px 20px;font-family:var(--mono);font-size:12.5px">Dest Zip</td>
+            <td style="padding:12px 20px"><label style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)" for="m5">Field for Dest Zip</label><select id="m5"><option>Destination ZIP</option><option>Origin ZIP</option><option>Ignore</option></select></td>
+            <td style="padding:12px 20px;font-family:var(--mono);font-size:12px;color:var(--ink-2)">30301</td>
+            <td style="padding:12px 20px"><span style="font-size:11px;font-weight:600;color:var(--pos);background:var(--pos-bg);border-radius:999px;padding:2px 9px">Confirmed</span></td>
+          </tr>
+        </tbody>
+      </table>
+      </div>
+
+      <!-- footer -->
+      <div style="display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;padding:16px 20px;border-top:1px solid var(--line-2);background:var(--surface-2)">
+        <span style="display:inline-flex;align-items:center;gap:8px;font-size:12px;color:var(--ink-2)">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#136F4E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+          Dollar amounts are read from your file exactly — the app only compares them to the rate card.
+        </span>
+        <div style="display:flex;gap:10px">
+          <button style="font-family:var(--sans);background:var(--surface);color:var(--ink-2);font-size:13px;font-weight:600;padding:9px 16px;border:1px solid var(--line);border-radius:9px;cursor:pointer">Cancel</button>
+          <button style="font-family:var(--sans);background:#0C757F;color:#fff;font-size:13px;font-weight:600;padding:9px 16px;border:none;border-radius:9px;cursor:pointer">Confirm mapping &amp; import</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- recent imports log -->
+    <section style="display:flex;flex-direction:column;gap:10px">
+      <h2 style="margin:0;font-size:14px;font-weight:700">Recent imports</h2>
+      <div style="background:var(--surface);border:1px solid var(--line);border-radius:12px;overflow:hidden">
+        <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;padding:12px 18px;border-bottom:1px solid var(--line-2)">
+          <span style="display:flex;align-items:center;gap:10px;font-size:13px"><span style="width:7px;height:7px;border-radius:50%;background:var(--pos)"></span>harbor_shipments_0930.csv</span>
+          <span style="font-size:12px;color:var(--ink-3)">1,204 rows matched · 2h ago</span>
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;padding:12px 18px">
+          <span style="display:flex;align-items:center;gap:10px;font-size:13px"><span style="width:7px;height:7px;border-radius:50%;background:var(--danger)"></span>fedex_invoice_wk39.csv</span>
+          <span style="font-size:12px;color:var(--danger)">14 rows skipped — missing tracking number · yesterday</span>
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+</body>
+</html>

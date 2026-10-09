@@ -11,8 +11,7 @@ export type PublicBranding = {
   primary_color?: string;
 };
 
-/** Matches `seed_demo_northstar` branding_json.primary_color when API is unreachable. */
-const FALLBACK_ACCENT = "#0f766e";
+import { DEFAULT_ACCENT, partnerAccentStyle } from "@/lib/accent-vars";
 
 export function usePartnerBranding(partnerSlug?: string | null) {
   const slug = partnerSlug?.trim() || DEMO_PARTNER_SLUG;
@@ -28,6 +27,7 @@ export function usePartnerBranding(partnerSlug?: string | null) {
     };
   }, [slug]);
 
-  const accent = branding?.primary_color ?? FALLBACK_ACCENT;
-  return { branding, accent, partnerSlug: slug };
+  const accent = branding?.primary_color ?? DEFAULT_ACCENT;
+  const accentStyle = partnerAccentStyle(branding?.primary_color);
+  return { branding, accent, accentStyle, partnerSlug: slug };
 }

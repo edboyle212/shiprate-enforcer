@@ -36,7 +36,7 @@ test.describe("app pages", () => {
 
   test("nav links reach dashboard from home", async ({ page }) => {
     await page.goto("/");
-    await page.getByRole("link", { name: "Dashboard" }).click();
+    await page.getByRole("link", { name: "Dashboard", exact: true }).click();
     await expect(page).toHaveURL(/\/dashboard/);
     await expect(page.getByRole("heading", { name: /Dashboard/i })).toBeVisible();
   });

@@ -88,27 +88,30 @@ function AccountBody({ orgId }: { orgId: string }) {
   }
 
   const feePercent = ((profile?.recovery_fee_bps ?? 2000) / 100).toFixed(2);
+  const fieldClass = "mt-1 w-full rounded-lg px-3 py-2 text-sm";
+  const fieldStyle = { border: "1px solid var(--line)", background: "var(--surface)" };
 
   return (
-    <main className="mx-auto max-w-2xl px-6 py-8">
+    <main>
       <form onSubmit={(e) => void onSave(e)} className="space-y-8">
         <section className="space-y-3">
-          <h2 className="text-sm font-medium text-slate-300">Company</h2>
+          <h2 className="text-sm font-medium" style={{ color: "var(--ink-2)" }}>Company</h2>
           <label className="block text-sm">
             Legal name
             <input
-              className="mt-1 w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2"
+              className="mt-1 w-full rounded-lg px-3 py-2"
+              style={{ border: "1px solid var(--line)", background: "var(--surface)" }}
               value={name}
               onChange={(e) => setName(e.target.value)}
             />
           </label>
-          <p className="text-xs text-slate-500">
+          <p className="text-xs" style={{ color: "var(--ink-3)" }}>
             Account slug: <code>{profile?.slug ?? "—"}</code>
           </p>
         </section>
 
         <section className="space-y-3">
-          <h2 className="text-sm font-medium text-slate-300">Contacts</h2>
+          <h2 className="text-sm font-medium" style={{ color: "var(--ink-2)" }}>Contacts</h2>
           {(
             [
               ["primary_name", "Primary name"],
@@ -120,7 +123,8 @@ function AccountBody({ orgId }: { orgId: string }) {
             <label key={key} className="block text-sm">
               {label}
               <input
-                className="mt-1 w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2"
+                className={fieldClass}
+                style={fieldStyle}
                 value={contacts[key]}
                 onChange={(e) => setContacts({ ...contacts, [key]: e.target.value })}
               />
@@ -129,11 +133,12 @@ function AccountBody({ orgId }: { orgId: string }) {
         </section>
 
         <section className="space-y-3">
-          <h2 className="text-sm font-medium text-slate-300">Carriers</h2>
+          <h2 className="text-sm font-medium" style={{ color: "var(--ink-2)" }}>Carriers</h2>
           <label className="block text-sm">
             Carriers you bill with (comma-separated)
             <input
-              className="mt-1 w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2"
+              className={fieldClass}
+              style={fieldStyle}
               value={carriers}
               onChange={(e) => setCarriers(e.target.value)}
             />
@@ -141,12 +146,13 @@ function AccountBody({ orgId }: { orgId: string }) {
         </section>
 
         <section className="space-y-3">
-          <h2 className="text-sm font-medium text-slate-300">Tolerances</h2>
+          <h2 className="text-sm font-medium" style={{ color: "var(--ink-2)" }}>Tolerances</h2>
           <div className="grid gap-3 sm:grid-cols-2">
             <label className="block text-sm">
               Absolute (dollars)
               <input
-                className="mt-1 w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2"
+                className={fieldClass}
+                style={fieldStyle}
                 value={absoluteDollars}
                 onChange={(e) => setAbsoluteDollars(e.target.value)}
               />
@@ -154,7 +160,8 @@ function AccountBody({ orgId }: { orgId: string }) {
             <label className="block text-sm">
               Percent
               <input
-                className="mt-1 w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2"
+                className={fieldClass}
+                style={fieldStyle}
                 value={percent}
                 onChange={(e) => setPercent(e.target.value)}
               />
@@ -163,11 +170,12 @@ function AccountBody({ orgId }: { orgId: string }) {
         </section>
 
         <section className="space-y-3">
-          <h2 className="text-sm font-medium text-slate-300">Disputes</h2>
+          <h2 className="text-sm font-medium" style={{ color: "var(--ink-2)" }}>Disputes</h2>
           <label className="block text-sm">
             Autonomy
             <select
-              className="mt-1 w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2"
+              className={fieldClass}
+              style={fieldStyle}
               value={autonomy}
               onChange={(e) => setAutonomy(e.target.value as AutonomyTier)}
             >
@@ -176,11 +184,12 @@ function AccountBody({ orgId }: { orgId: string }) {
               <option value="autonomous">Autonomous — the agent sends until someone stops it</option>
             </select>
           </label>
-          <p className="text-sm text-slate-400">Carrier billing emails</p>
+          <p className="text-sm" style={{ color: "var(--ink-2)" }}>Carrier billing emails</p>
           {billingEmails.map((row, i) => (
             <div key={i} className="grid gap-2 sm:grid-cols-2">
               <input
-                className="rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm"
+                className={fieldClass}
+                style={fieldStyle}
                 placeholder="Carrier"
                 value={row.carrier}
                 onChange={(e) => {
@@ -190,7 +199,8 @@ function AccountBody({ orgId }: { orgId: string }) {
                 }}
               />
               <input
-                className="rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm"
+                className={fieldClass}
+                style={fieldStyle}
                 placeholder="billing@carrier.example"
                 value={row.email}
                 onChange={(e) => {
@@ -203,7 +213,7 @@ function AccountBody({ orgId }: { orgId: string }) {
           ))}
           <button
             type="button"
-            className="text-sm text-emerald-400"
+            className="text-sm sr-link-accent"
             onClick={() => setBillingEmails([...billingEmails, { carrier: "", email: "" }])}
           >
             Add carrier email
@@ -211,17 +221,18 @@ function AccountBody({ orgId }: { orgId: string }) {
         </section>
 
         <section className="space-y-2">
-          <h2 className="text-sm font-medium text-slate-300">Recovery fee</h2>
-          <p className="text-sm text-slate-400">{feePercent}% of recovered credit. Platform-set. Not editable here.</p>
+          <h2 className="text-sm font-medium" style={{ color: "var(--ink-2)" }}>Recovery fee</h2>
+          <p className="text-sm" style={{ color: "var(--ink-2)" }}>{feePercent}% of recovered credit. Platform-set. Not editable here.</p>
         </section>
 
         <section className="space-y-3">
-          <h2 className="text-sm font-medium text-slate-300">People</h2>
-          <p className="text-xs text-slate-500">Directory only. This is not a login list.</p>
+          <h2 className="text-sm font-medium" style={{ color: "var(--ink-2)" }}>People</h2>
+          <p className="text-xs" style={{ color: "var(--ink-3)" }}>Directory only. This is not a login list.</p>
           {people.map((row, i) => (
             <div key={i} className="grid gap-2 sm:grid-cols-3">
               <input
-                className="rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm"
+                className={fieldClass}
+                style={fieldStyle}
                 placeholder="Name"
                 value={row.name}
                 onChange={(e) => {
@@ -231,7 +242,8 @@ function AccountBody({ orgId }: { orgId: string }) {
                 }}
               />
               <input
-                className="rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm"
+                className={fieldClass}
+                style={fieldStyle}
                 placeholder="Email"
                 value={row.email}
                 onChange={(e) => {
@@ -241,7 +253,8 @@ function AccountBody({ orgId }: { orgId: string }) {
                 }}
               />
               <select
-                className="rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm"
+                className={fieldClass}
+                style={fieldStyle}
                 value={row.role}
                 onChange={(e) => {
                   const next = [...people];
@@ -259,16 +272,16 @@ function AccountBody({ orgId }: { orgId: string }) {
           ))}
           <button
             type="button"
-            className="text-sm text-emerald-400"
+            className="text-sm sr-link-accent"
             onClick={() => setPeople([...people, { name: "", email: "", role: "viewer" }])}
           >
             Add person
           </button>
         </section>
 
-        {error && <p className="text-sm text-red-400">{error}</p>}
-        {status && <p className="text-sm text-emerald-400">{status}</p>}
-        <button type="submit" className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium">
+        {error && <p className="text-sm" style={{ color: "var(--danger)" }}>{error}</p>}
+        {status && <p className="text-sm" style={{ color: "var(--pos)" }}>{status}</p>}
+        <button type="submit" className="sr-btn-primary">
           Save account
         </button>
       </form>

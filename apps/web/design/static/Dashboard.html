@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Shiprate Enforcer — dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  body{margin:0}
+  :root{
+    --bg:#F4F6F8; --surface:#FFFFFF; --surface-2:#FBFCFD;
+    --ink:#161A1E; --ink-2:#48525B; --ink-3:#616C76;
+    --line:#E2E7EB; --line-2:#EEF1F4;
+    --attention:#B45309; --attention-bg:#FBF1E4;
+    --pos:#136F4E; --pos-bg:#E7F3EC; --info:#1F5FA8; --info-bg:#E8F0FA;
+    --danger:#B42334; --danger-bg:#FBE9EB;
+    --sans:'IBM Plex Sans',system-ui,sans-serif; --mono:'IBM Plex Mono',ui-monospace,monospace;
+  }
+  a{text-decoration:none}
+  .nav-item{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:9px;font-size:13.5px;color:var(--ink-2);font-weight:500}
+  .nav-item.active{background:#0C757F14;color:#0C757F;font-weight:600}
+  button:focus-visible,a:focus-visible{outline:2px solid #0C757F;outline-offset:2px}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.45}}
+  .sk{background:var(--line-2);border-radius:7px;animation:pulse 1.4s ease-in-out infinite}
+</style>
+</head>
+<body>
+<div style="min-height:100vh;background:var(--bg);font-family:var(--sans);color:var(--ink);display:flex;flex-wrap:wrap">
+
+  <!-- Sidebar -->
+  <aside style="flex:0 0 232px;min-width:200px;background:var(--surface);border-right:1px solid var(--line);padding:18px 16px;display:flex;flex-direction:column;gap:22px;box-sizing:border-box">
+    <div style="display:flex;align-items:center;gap:9px;padding:4px 6px">
+      <span style="width:24px;height:24px;border-radius:7px;background:#0C757F"></span>
+      <div style="display:flex;flex-direction:column;line-height:1.1"><span style="font-weight:700;font-size:14px">Northstar WMS</span><span style="font-size:10.5px;color:var(--ink-3)">Shiprate Enforcer</span></div>
+    </div>
+    <nav style="display:flex;flex-direction:column;gap:3px">
+      <a href="Dashboard.html" class="nav-item active"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 15l4-5 3 3 4-6"/></svg>Dashboard</a>
+      <a href="ImportCenter.html" class="nav-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4"/><path d="M7 9l5-5 5 5"/><path d="M20 16v3a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-3"/></svg>Imports</a>
+      <a href="DiscrepancyList.html" class="nav-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16"/><path d="M4 12h16"/><path d="M4 18h10"/></svg>Discrepancies</a>
+      <a href="Home.html" class="nav-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>Account</a>
+    </nav>
+    <div style="margin-top:auto;background:var(--surface-2);border:1px solid var(--line);border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:3px">
+      <span style="font-size:11px;color:var(--ink-3)">Workspace</span>
+      <span style="font-size:13px;font-weight:600">Harbor Freight Desk</span>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <main style="flex:999 1 560px;min-width:0;padding:24px 32px 48px;display:flex;flex-direction:column;gap:22px">
+
+    <header style="display:flex;flex-wrap:wrap;gap:14px;align-items:center;justify-content:space-between">
+      <div style="display:flex;flex-direction:column;gap:3px">
+        <h1 style="margin:0;font-size:22px;font-weight:700;letter-spacing:-.01em">Dashboard</h1>
+        <span style="font-size:13px;color:var(--ink-2)">Harbor Freight Desk · UPS &amp; FedEx</span>
+      </div>
+      <a href="ImportCenter.html" style="display:inline-flex;align-items:center;gap:8px;background:#0C757F;color:#fff;font-size:13px;font-weight:600;padding:9px 15px;border-radius:9px">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4"/><path d="M7 9l5-5 5 5"/><path d="M20 16v3a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-3"/></svg>
+        Import files
+      </a>
+    </header>
+
+    <!-- DATA -->
+    
+    <div style="display:flex;flex-direction:column;gap:22px">
+      <!-- KPI row -->
+      <section style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(190px,100%),1fr));gap:14px">
+        <div style="background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px;display:flex;flex-direction:column;gap:5px">
+          <span style="font-size:12px;color:var(--ink-2)">Discrepancies</span>
+          <span style="font-family:var(--mono);font-size:24px;font-weight:600;letter-spacing:-.02em">38</span>
+          <span style="font-size:11.5px;color:var(--ink-3)">of 1,204 shipments</span>
+        </div>
+        <div style="background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px;display:flex;flex-direction:column;gap:5px">
+          <span style="font-size:12px;color:var(--ink-2)">Total overcharge</span>
+          <span style="font-family:var(--mono);font-size:24px;font-weight:600;letter-spacing:-.02em;color:var(--attention)">$4,210.00</span>
+          <span style="font-size:11.5px;color:var(--ink-3)">calculated from rate card</span>
+        </div>
+        <div style="background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px;display:flex;flex-direction:column;gap:5px">
+          <span style="font-size:12px;color:var(--ink-2)">Open disputes</span>
+          <span style="font-family:var(--mono);font-size:24px;font-weight:600;letter-spacing:-.02em">6</span>
+          <span style="font-size:11.5px;color:var(--ink-3)">$1,940.00 in play</span>
+        </div>
+        <div style="background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px;display:flex;flex-direction:column;gap:5px">
+          <span style="font-size:12px;color:var(--ink-2)">Compliance rate</span>
+          <span style="font-family:var(--mono);font-size:24px;font-weight:600;letter-spacing:-.02em">96.8%</span>
+          <span style="font-size:11.5px;color:var(--ink-3)">billed within rate card</span>
+        </div>
+        <div style="background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px;display:flex;flex-direction:column;gap:5px">
+          <span style="font-size:12px;color:var(--ink-2)">Recovered (90d)</span>
+          <span style="font-family:var(--mono);font-size:24px;font-weight:600;letter-spacing:-.02em;color:var(--pos)">$12,980.00</span>
+          <span style="font-size:11.5px;color:var(--ink-3)">across 54 disputes</span>
+        </div>
+      </section>
+
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(320px,100%),1fr));gap:18px;align-items:start">
+        <!-- Overcharge by carrier -->
+        <section style="background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:20px;display:flex;flex-direction:column;gap:16px">
+          <h2 style="margin:0;font-size:14px;font-weight:700">Overcharge by carrier</h2>
+          <div style="display:flex;flex-direction:column;gap:14px">
+            <div style="display:flex;flex-direction:column;gap:6px">
+              <div style="display:flex;justify-content:space-between;font-size:13px"><span style="color:var(--ink-2)">UPS</span><span style="font-family:var(--mono);font-weight:600">$2,880.00</span></div>
+              <span style="height:8px;border-radius:5px;background:var(--line-2);display:block"><span style="display:block;height:8px;border-radius:5px;width:68%;background:var(--attention)"></span></span>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:6px">
+              <div style="display:flex;justify-content:space-between;font-size:13px"><span style="color:var(--ink-2)">FedEx</span><span style="font-family:var(--mono);font-weight:600">$1,120.00</span></div>
+              <span style="height:8px;border-radius:5px;background:var(--line-2);display:block"><span style="display:block;height:8px;border-radius:5px;width:27%;background:var(--attention)"></span></span>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:6px">
+              <div style="display:flex;justify-content:space-between;font-size:13px"><span style="color:var(--ink-2)">Other</span><span style="font-family:var(--mono);font-weight:600">$210.00</span></div>
+              <span style="height:8px;border-radius:5px;background:var(--line-2);display:block"><span style="display:block;height:8px;border-radius:5px;width:6%;background:var(--attention)"></span></span>
+            </div>
+          </div>
+          <div style="display:flex;gap:16px;border-top:1px solid var(--line-2);padding-top:12px;font-size:12px;color:var(--ink-3)">
+            <span>Top reason: <strong style="color:var(--ink-2)">weight rounding</strong></span>
+            <span>Then: <strong style="color:var(--ink-2)">zone</strong></span>
+          </div>
+        </section>
+
+        <!-- Needs review -->
+        <section style="background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:20px;display:flex;flex-direction:column;gap:14px">
+          <div style="display:flex;justify-content:space-between;align-items:baseline">
+            <h2 style="margin:0;font-size:14px;font-weight:700">Needs review</h2>
+            <a href="DiscrepancyList.html" style="font-size:12.5px;color:#0C757F;font-weight:600">Open list</a>
+          </div>
+          <div style="display:flex;flex-direction:column">
+            <a href="DiscrepancyDetail.html" style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 0;border-bottom:1px solid var(--line-2);color:inherit">
+              <span style="display:flex;flex-direction:column;gap:2px"><span style="font-family:var(--mono);font-size:12.5px">1Z999AA10123456784</span><span style="font-size:11px;color:var(--ink-3)">UPS Ground · zone 5 · 8 lb</span></span>
+              <span style="font-family:var(--mono);font-size:13px;color:var(--attention);font-weight:700">+$10.00</span>
+            </a>
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 0;border-bottom:1px solid var(--line-2)">
+              <span style="display:flex;flex-direction:column;gap:2px"><span style="font-family:var(--mono);font-size:12.5px">1Z999AA10198327461</span><span style="font-size:11px;color:var(--ink-3)">UPS Ground · min charge</span></span>
+              <span style="font-family:var(--mono);font-size:13px;color:var(--attention);font-weight:700">+$6.40</span>
+            </div>
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 0">
+              <span style="display:flex;flex-direction:column;gap:2px"><span style="font-family:var(--mono);font-size:12.5px">7742&nbsp;9981&nbsp;0043</span><span style="font-size:11px;color:var(--ink-3)">FedEx Home · zone 4</span></span>
+              <span style="font-family:var(--mono);font-size:13px;color:var(--attention);font-weight:700">+$3.75</span>
+            </div>
+          </div>
+        </section>
+      </div>
+    </div>
+    
+
+    <!-- EMPTY -->
+    
+
+    <!-- LOADING -->
+    
+
+    <!-- ERROR -->
+    
+
+  </main>
+</div>
+</body>
+</html>
