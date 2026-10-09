@@ -14,7 +14,7 @@ from sqlalchemy.orm import Session
 REPO_ROOT = Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(REPO_ROOT))
 
-from demo.northstar_constants import (  # noqa: E402
+from demo.northstar_constants import (
     DEMO_ORG_ID,
     DEMO_ORG_NAME,
     DEMO_ORG_SLUG,
@@ -25,8 +25,8 @@ from demo.northstar_constants import (  # noqa: E402
     PARTNER_ID,
 )
 
-from app.config import settings  # noqa: E402
-from app.models import (  # noqa: E402
+from app.config import settings
+from app.models import (
     MembershipRole,
     Organization,
     OrganizationMembership,

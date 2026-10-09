@@ -20,7 +20,11 @@ from app.models import (
     SourceFileKind,
     WmsPartner,
 )
-from app.services.etl_file_drop import _parse_amount_minor, poll_etl_drop, process_etl_pending_import_jobs
+from app.services.etl_file_drop import (
+    _parse_amount_minor,
+    poll_etl_drop,
+    process_etl_pending_import_jobs,
+)
 from app.services.partner_profiles import upsert_partner_profile
 from app.services.reporting import ReportingSummary
 from tests.conftest import ORG_HEADER, ORG_ID
@@ -152,13 +156,17 @@ async def test_process_etl_pending_import_jobs_shipments_and_invoices(tmp_path, 
         return SimpleNamespace(all=lambda: [ship_job, inv_job])
 
     async def _scalar(stmt):
-        if "source_files" in str(stmt).lower() or "SourceFile" in str(stmt):
-            if ship_job.source_file_id and inv_job.source_file_id:
-                # Resolve by job order in loop — first ship then inv
-                if not hasattr(_scalar, "_n"):
-                    _scalar._n = 0
-                _scalar._n += 1
-                return ship_source if _scalar._n == 1 else inv_source
+        stmt_text = str(stmt)
+        if (
+            ("source_files" in stmt_text.lower() or "SourceFile" in stmt_text)
+            and ship_job.source_file_id
+            and inv_job.source_file_id
+        ):
+            # Resolve by job order in loop — first ship then inv
+            if not hasattr(_scalar, "_n"):
+                _scalar._n = 0
+            _scalar._n += 1
+            return ship_source if _scalar._n == 1 else inv_source
         return None
 
     db = AsyncMock()
