@@ -215,14 +215,14 @@ def test_stop_case(_rls: AsyncMock, mock_stop: AsyncMock, api_client: tuple[Test
 @patch("app.routers.partners.set_rls_organization", new_callable=AsyncMock)
 def test_partner_profile_put(_rls: AsyncMock, api_client: tuple[TestClient, AsyncMock]):
     client, session = api_client
-    row = WmsPartner(partner_id="jasci", display_name="J", profile_json={}, branding_json={})
+    row = WmsPartner(partner_id="northstar", display_name="Northstar WMS", profile_json={}, branding_json={})
     session.scalar = AsyncMock(return_value=row)
     session.commit = AsyncMock()
     session.refresh = AsyncMock()
     res = client.put(
-        f"{PREFIX}/partners/jasci/profile",
+        f"{PREFIX}/partners/northstar/profile",
         headers={**ORG_HEADER, **admin_auth_headers()},
-        json={"partner_name": "Jasci", "notes": "hi"},
+        json={"partner_name": "Northstar WMS", "notes": "hi"},
     )
     assert res.status_code == 200
 

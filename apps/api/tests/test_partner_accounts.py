@@ -39,11 +39,11 @@ def test_partner_account_list_only_that_partner(_mock_rls: AsyncMock, api_client
     from app.db import get_db
     from app.main import app
 
-    jasci = Organization(
+    northstar = Organization(
         id=ORG_A,
         name="Warehouse A",
         slug="warehouse-a",
-        partner_id="jasci",
+        partner_id="northstar",
         settings_json={"client_onboarding": {"completed_at": "2026-01-01T00:00:00+00:00"}},
         created_at=datetime.now(UTC),
     )
@@ -57,7 +57,7 @@ def test_partner_account_list_only_that_partner(_mock_rls: AsyncMock, api_client
     )
 
     async def _scalars(_stmt):
-        return SimpleNamespace(all=lambda: [jasci])
+        return SimpleNamespace(all=lambda: [northstar])
 
     session = AsyncMock()
     session.scalars = _scalars
@@ -67,7 +67,7 @@ def test_partner_account_list_only_that_partner(_mock_rls: AsyncMock, api_client
 
     app.dependency_overrides[get_db] = _db
     prefix = settings.api_prefix.rstrip("/")
-    response = api_client.get(f"{prefix}/partners/jasci/accounts")
+    response = api_client.get(f"{prefix}/partners/northstar/accounts")
     assert response.status_code == 200
     rows = response.json()
     ids = {row["id"] for row in rows}
@@ -108,7 +108,7 @@ def test_partner_account_detail_404_for_other_partner(
 
     app.dependency_overrides[get_db] = _db
     prefix = settings.api_prefix.rstrip("/")
-    response = api_client.get(f"{prefix}/partners/jasci/accounts/{ORG_A}")
+    response = api_client.get(f"{prefix}/partners/northstar/accounts/{ORG_A}")
     assert response.status_code == 404
     mock_summary.assert_not_called()
     app.dependency_overrides.clear()

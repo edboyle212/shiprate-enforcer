@@ -74,7 +74,7 @@ async def ensure_test_identity(session: AsyncSession) -> None:
                 id=ORG_ID,
                 name="Test Org",
                 slug="test-org",
-                partner_id="jasci",
+                partner_id="northstar",
             )
         )
         await session.flush()

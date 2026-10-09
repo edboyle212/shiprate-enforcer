@@ -32,7 +32,7 @@ def main() -> None:
                 {"org_id": str(ORG_ID)},
             )
             if session.get(Organization, ORG_ID) is None:
-                session.add(Organization(id=ORG_ID, name="E2E Org", slug="e2e-org", partner_id="jasci"))
+                session.add(Organization(id=ORG_ID, name="E2E Org", slug="e2e-org", partner_id="northstar"))
             user = session.scalar(select(User).where(User.external_auth_id == USER_EXTERNAL))
             if user is None:
                 user = User(id=uuid.uuid4(), external_auth_id=USER_EXTERNAL, email="e2e@example.invalid")

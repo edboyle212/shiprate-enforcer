@@ -292,12 +292,12 @@ async def test_run_compliance_for_matches_creates_discrepancy():
 async def test_partner_profiles():
     db = AsyncMock()
     db.scalar = AsyncMock(return_value=None)
-    assert await get_partner_profile(db, "jasci") == {}
+    assert await get_partner_profile(db, "northstar") == {}
 
-    row = WmsPartner(partner_id="jasci", display_name="Jasci", profile_json={"notes": "x"}, branding_json={"logo_url": "l"})
+    row = WmsPartner(partner_id="northstar", display_name="Northstar WMS", profile_json={"notes": "x"}, branding_json={"logo_url": "l"})
     db.scalar = AsyncMock(return_value=row)
-    prof = await get_partner_profile(db, "jasci")
-    assert prof["display_name"] == "Jasci"
+    prof = await get_partner_profile(db, "northstar")
+    assert prof["display_name"] == "Northstar WMS"
 
     db.scalar = AsyncMock(return_value=None)
     db.commit = AsyncMock()
@@ -404,7 +404,7 @@ async def test_etl_poll_drop_ingests(tmp_path, monkeypatch: pytest.MonkeyPatch):
     monkeypatch.setattr("app.services.storage.settings.local_upload_dir", str(tmp_path))
     monkeypatch.setattr("app.services.storage.settings.s3_endpoint_url", None)
     monkeypatch.setattr("app.services.storage.settings.etl_drop_root", "etl-drops")
-    drop = tmp_path / "etl-drops" / "jasci" / str(ORG_ID) / "shipments"
+    drop = tmp_path / "etl-drops" / "northstar" / str(ORG_ID) / "shipments"
     drop.mkdir(parents=True)
     (drop / "file.csv").write_bytes(b"track\n1Z\n")
 
@@ -414,6 +414,6 @@ async def test_etl_poll_drop_ingests(tmp_path, monkeypatch: pytest.MonkeyPatch):
     db.commit = AsyncMock()
     db.add = MagicMock()
 
-    result = await poll_etl_drop(db, partner_id="jasci", organization_id=ORG_ID)
+    result = await poll_etl_drop(db, partner_id="northstar", organization_id=ORG_ID)
     assert len(result["ingested"]) == 1
     db.commit.assert_awaited()

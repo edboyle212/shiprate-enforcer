@@ -21,7 +21,7 @@ def test_apply_profile_patch_updates_name_tolerances_autonomy_leaves_fee():
         id=ORG_ID,
         name="Old Co",
         slug="old-co",
-        partner_id="jasci",
+        partner_id="northstar",
         settings_json={
             "recovery_fee_bps": 2000,
             "autonomy_tier": "draft",
@@ -124,7 +124,7 @@ def test_profile_get_includes_setup_complete(_mock_rls: AsyncMock, api_client: T
         id=ORG_ID,
         name="Acme",
         slug="acme",
-        partner_id="jasci",
+        partner_id="northstar",
         settings_json={
             "client_onboarding": {"completed_at": datetime.now(UTC).isoformat()},
         },

@@ -15,7 +15,7 @@ def test_list_etl_objects_local(tmp_path, monkeypatch):
     monkeypatch.setattr(settings, "s3_endpoint_url", None)
     monkeypatch.setattr(settings, "etl_drop_root", "etl-drops")
 
-    partner = "jasci"
+    partner = "northstar"
     org = str(uuid.uuid4())
     ship_dir = tmp_path / "etl-drops" / partner / org / "shipments"
     ship_dir.mkdir(parents=True)

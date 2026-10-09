@@ -47,6 +47,8 @@ Routes:
 - Partner accounts: `/partner/{partnerId}/accounts`
 - Client wizard: `/p/{partnerSlug}/onboarding`
 
+**Demo (white-label):** seed Northstar WMS with `python apps/api/scripts/seed_demo_northstar.py`, then open `/p/northstar/onboarding` or run `scripts/run-northstar-demo-drop.sh`. Partner branding is served from `GET /api/v1/partners/northstar/public-branding`.
+
 Dispute mail is gated by the org **autonomy tier** (`draft`, `approve_each`, `autonomous`). Recovered credits record a platform fee (`recovery_fee_bps`). AI column mapping is assist-only (`SHIPRATE_AI_ENABLED=1` + provider keys); it never writes rate tables or monetary dispute decisions.
 
 ### API highlights (prefix `/api/v1`)

@@ -341,7 +341,7 @@ def test_manual_match_not_found(
 @patch("app.routers.etl.poll_etl_drop", new_callable=AsyncMock)
 def test_etl_poll_drop(mock_poll: AsyncMock, api_client: tuple[TestClient, AsyncMock]):
     client, _ = api_client
-    mock_poll.return_value = {"partner_id": "jasci", "ingested": ["a.csv"], "skipped": []}
+    mock_poll.return_value = {"partner_id": "northstar", "ingested": ["a.csv"], "skipped": []}
     res = client.post(f"{PREFIX}/etl/poll-drop", headers=ORG_HEADER)
     assert res.status_code == 200
     assert res.json()["ingested"] == ["a.csv"]

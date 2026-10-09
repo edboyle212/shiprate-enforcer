@@ -19,6 +19,6 @@ Default prefix (S3 or local mirror):
 - **Tenancy:** path includes `organization_id` (UUID). Map from `partner_tenant_id` via org record or partner profile mapping table (TBD).
 - **Failure:** import job `failed` + DQ issue (future); no silent partial rating.
 
-## JASCI POC
+## Northstar WMS demo (file drop)
 
-JASCI collects client files and drops under `jasci/{org_uuid}/…`. No REST API required.
+The demo partner collects client files and drops under `northstar/{org_uuid}/…`. No partner REST API required for POC. See [demo-walkthrough.md](./demo-walkthrough.md) and `scripts/run-northstar-demo-drop.sh`.

@@ -62,7 +62,7 @@ async def _principal_from_test_token(session: AsyncSession, token: str) -> Princ
             organization_id=org_id,
             membership_role="owner",
             is_platform_admin=external_id in ("test-platform-admin",) or external_id.endswith("-admin"),
-            partner_ids=frozenset({"jasci"}),
+            partner_ids=frozenset({"northstar"}),
         )
     return await _principal_for_external_user(session, external_id, org_id)
 

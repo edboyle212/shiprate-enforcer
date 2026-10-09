@@ -5,6 +5,8 @@ import { useEffect, useState } from "react";
 
 import { ClientShell } from "@/app/components/client-shell";
 import { getOrganizationProfile, getReportingSummary, type OrganizationProfile, type ReportingSummary } from "@/lib/api";
+import { DEMO_PARTNER_SLUG } from "@/lib/demo-partner";
+import { usePartnerBranding } from "@/lib/partner-branding";
 
 function formatMoney(minor: number) {
   return `$${(minor / 100).toFixed(2)}`;
@@ -31,7 +33,9 @@ function DashboardBody({ orgId }: { orgId: string }) {
     };
   }, [orgId]);
 
-  const wizardHref = `/p/${profile?.partner_id ?? "northstar"}/onboarding?org=${orgId}`;
+  const wizardHref = `/p/${profile?.partner_id ?? DEMO_PARTNER_SLUG}/onboarding?org=${orgId}`;
+  const { accent } = usePartnerBranding(profile?.partner_id ?? DEMO_PARTNER_SLUG);
+  const linkStyle = { color: accent };
 
   return (
     <main className="mx-auto max-w-4xl px-6 py-8">
@@ -63,11 +67,11 @@ function DashboardBody({ orgId }: { orgId: string }) {
           {profile && !profile.setup_complete && (
             <li>
               Setup is unfinished.{" "}
-              <Link href="/account" className="text-emerald-400 underline">
+              <Link href="/account" className="underline" style={linkStyle}>
                 Finish the account profile
               </Link>{" "}
               or{" "}
-              <Link href={wizardHref} className="text-emerald-400 underline">
+              <Link href={wizardHref} className="underline" style={linkStyle}>
                 continue the wizard
               </Link>
               .
@@ -76,7 +80,7 @@ function DashboardBody({ orgId }: { orgId: string }) {
           {(summary?.discrepancy_count ?? 0) > 0 && (
             <li>
               {summary?.discrepancy_count} discrepancies to review.{" "}
-              <Link href="/discrepancies" className="text-emerald-400 underline">
+              <Link href="/discrepancies" className="underline" style={linkStyle}>
                 Open discrepancies
               </Link>
               .
@@ -85,7 +89,7 @@ function DashboardBody({ orgId }: { orgId: string }) {
           {(summary?.import_job_count ?? 0) === 0 && (
             <li>
               No files imported yet.{" "}
-              <Link href="/imports" className="text-emerald-400 underline">
+              <Link href="/imports" className="underline" style={linkStyle}>
                 Open import center
               </Link>
               .
