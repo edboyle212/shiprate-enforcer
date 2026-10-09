@@ -14,16 +14,16 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(REPO_ROOT))
 
-from demo.northstar_constants import DEMO_ORG_ID, PARTNER_ID  # noqa: E402
+from demo.northstar_constants import DEMO_ORG_ID, PARTNER_ID
 
-from app.db import SessionLocal, set_rls_organization  # noqa: E402
-from app.services.etl_file_drop import (  # noqa: E402
+from app.config import settings
+from app.db import SessionLocal, set_rls_organization
+from app.services.compliance import run_compliance_for_matches
+from app.services.etl_file_drop import (
     poll_etl_drop,
     process_etl_pending_import_jobs,
 )
-from app.services.matching import run_automatic_matching  # noqa: E402
-from app.services.compliance import run_compliance_for_matches  # noqa: E402
-from app.config import settings  # noqa: E402
+from app.services.matching import run_automatic_matching
 
 FIXTURES = REPO_ROOT / "demo" / "fixtures"
 
@@ -96,7 +96,7 @@ def main() -> None:
     print("Pipeline result:")
     print(result)
     print()
-    print(f"Open web UI: http://127.0.0.1:43123/discrepancies")
+    print("Open web UI: http://127.0.0.1:43123/discrepancies")
     print(f"Set org in Account or localStorage shiprate_demo_org_id = {DEMO_ORG_ID}")
     print(f"API header: X-Organization-Id: {DEMO_ORG_ID}")
 
