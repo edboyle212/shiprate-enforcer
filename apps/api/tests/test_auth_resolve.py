@@ -31,7 +31,7 @@ async def test_test_bearer_platform_admin_flag():
     principal = await principal_from_bearer(session, token)
     assert principal is not None
     assert principal.is_platform_admin is True
-    assert "jasci" in principal.partner_ids
+    assert "northstar" in principal.partner_ids
 
 
 @pytest.mark.asyncio

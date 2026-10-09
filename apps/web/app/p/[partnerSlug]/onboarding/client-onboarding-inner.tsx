@@ -29,7 +29,11 @@ export default function ClientOnboardingInner() {
   const [orgId, setOrgId] = useState(searchParams.get("org") ?? "");
   const [orgName, setOrgName] = useState("");
   const [carriers, setCarriers] = useState("");
-  const [branding, setBranding] = useState<{ display_name?: string; primary_color?: string } | null>(null);
+  const [branding, setBranding] = useState<{
+    display_name?: string;
+    primary_color?: string;
+    logo_url?: string;
+  } | null>(null);
   const [uploadStatus, setUploadStatus] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -37,7 +41,7 @@ export default function ClientOnboardingInner() {
     loadPublicBranding(params.partnerSlug).then(setBranding);
   }, [params.partnerSlug]);
 
-  const accent = branding?.primary_color ?? "#059669";
+  const accent = branding?.primary_color ?? "#0f766e";
 
   async function ensureOrg() {
     if (orgId) return orgId;
@@ -79,7 +83,12 @@ export default function ClientOnboardingInner() {
   return (
     <div className="min-h-screen bg-white text-slate-900">
       <header className="border-b px-6 py-6" style={{ borderBottomColor: accent }}>
-        <p className="text-sm text-slate-500">Powered by {branding?.display_name ?? params.partnerSlug}</p>
+        <div className="flex items-center gap-3">
+          {branding?.logo_url ? (
+            <img src={branding.logo_url} alt="" className="h-8 w-auto object-contain" />
+          ) : null}
+          <p className="text-sm text-slate-500">{branding?.display_name ?? params.partnerSlug}</p>
+        </div>
         <h1 className="text-2xl font-semibold">Warehouse rate compliance setup</h1>
       </header>
       <main className="mx-auto max-w-xl px-6 py-10">

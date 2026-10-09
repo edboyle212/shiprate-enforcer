@@ -33,8 +33,8 @@ PREFIX = settings.api_prefix.rstrip("/")
 @patch("app.routers.imports.set_rls_organization", new_callable=AsyncMock)
 def test_partner_onboarding_get(_rls: AsyncMock, mock_get: AsyncMock, api_client: tuple[TestClient, AsyncMock]):
     client, _ = api_client
-    mock_get.return_value = {"partner_id": "jasci"}
-    res = client.get(f"{PREFIX}/partners/jasci/onboarding", headers=ORG_HEADER)
+    mock_get.return_value = {"partner_id": "northstar"}
+    res = client.get(f"{PREFIX}/partners/northstar/onboarding", headers=ORG_HEADER)
     assert res.status_code == 200
 
 
@@ -189,15 +189,15 @@ def test_review_discrepancy(_rls: AsyncMock, api_client: tuple[TestClient, Async
 def test_partners_public_branding(_rls: AsyncMock, api_client: tuple[TestClient, AsyncMock]):
     client, session = api_client
     partner = WmsPartner(
-        partner_id="jasci",
-        display_name="Jasci",
+        partner_id="northstar",
+        display_name="Northstar WMS",
         profile_json={},
         branding_json={"primary_color": "#000"},
     )
     session.scalar = AsyncMock(return_value=partner)
-    res = client.get(f"{PREFIX}/partners/jasci/public-branding")
+    res = client.get(f"{PREFIX}/partners/northstar/public-branding")
     assert res.status_code == 200
-    assert res.json()["display_name"] == "Jasci"
+    assert res.json()["display_name"] == "Northstar WMS"
 
 
 @patch("app.routers.orgs.set_rls_organization", new_callable=AsyncMock)

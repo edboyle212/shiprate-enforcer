@@ -14,11 +14,11 @@ import {
 } from "@/lib/api";
 
 const SAMPLE_SHIPMENTS = `tracking_number,carrier,service,dest_postal,weight_oz
-1Z999RLS0000000001,UPS,GND,10001,4
+1ZNORTH0000000001,UPS,GND,10001,4
 `;
 
 const SAMPLE_INVOICE = `tracking_number,charge_code,description,billed_amount
-1Z999RLS0000000001,FRT,Ground,15.00
+1ZNORTH0000000001,FRT,Ground parcel,15.00
 `;
 
 function ImportsBody({ orgId }: { orgId: string }) {

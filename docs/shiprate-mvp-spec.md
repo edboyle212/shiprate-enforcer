@@ -31,4 +31,4 @@ Fingerprint → Jev → Grok → Claude → human accept. Never rates or submits
 
 ## Out of scope (Track B)
 
-JASCI REST, SmartTask embed, custom domains, rev-share billing automation.
+Partner WMS REST integrations, SmartTask embed, custom domains, rev-share billing automation.

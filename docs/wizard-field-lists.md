@@ -1,5 +1,7 @@
 # Onboarding wizard field lists
 
+Demo partner slug: `northstar` (Northstar WMS). Client invite URLs use `/p/northstar/onboarding?org=`.
+
 ## Partner admin (`/partner/{partnerId}/onboarding`)
 
 | Step | Fields |
