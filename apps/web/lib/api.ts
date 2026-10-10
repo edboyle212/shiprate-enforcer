@@ -1,5 +1,15 @@
 const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://127.0.0.1:8000/api/v1";
 
+const DEFAULT_DEMO_ORG_ID = process.env.NEXT_PUBLIC_DEFAULT_DEMO_ORG_ID?.trim() || null;
+
+export function tenantHeaders(organizationId: string, extra?: Record<string, string>): Record<string, string> {
+  const headers: Record<string, string> = { "X-Organization-Id": organizationId, ...extra };
+  if (DEFAULT_DEMO_ORG_ID && organizationId === DEFAULT_DEMO_ORG_ID) {
+    headers.Authorization = `Bearer shiprate-test:try-demo:${organizationId}`;
+  }
+  return headers;
+}
+
 export async function savePartnerOnboarding(
   partnerId: string,
   organizationId: string,
@@ -7,10 +17,7 @@ export async function savePartnerOnboarding(
 ) {
   const res = await fetch(`${API_BASE}/partners/${partnerId}/profile`, {
     method: "PUT",
-    headers: {
-      "Content-Type": "application/json",
-      "X-Organization-Id": organizationId,
-    },
+    headers: tenantHeaders(organizationId, { "Content-Type": "application/json" }),
     body: JSON.stringify(payload),
   });
   if (!res.ok) {
@@ -21,7 +28,7 @@ export async function savePartnerOnboarding(
 
 export async function loadPartnerProfile(partnerId: string, organizationId: string) {
   const res = await fetch(`${API_BASE}/partners/${partnerId}/profile`, {
-    headers: { "X-Organization-Id": organizationId },
+    headers: tenantHeaders(organizationId),
   });
   if (!res.ok) return null;
   return res.json();
@@ -52,7 +59,7 @@ export async function uploadSourceFile(
   form.append("file", file);
   const res = await fetch(`${API_BASE}/source-files?kind=${kind}`, {
     method: "POST",
-    headers: { "X-Organization-Id": organizationId },
+    headers: tenantHeaders(organizationId),
     body: form,
   });
   if (!res.ok) throw new Error(`Upload failed ${res.status}`);
@@ -64,7 +71,7 @@ export async function createImportJob(organizationId: string, sourceFileId: stri
     `${API_BASE}/import-jobs?source_file_id=${sourceFileId}&idempotency_key=${encodeURIComponent(idempotencyKey)}`,
     {
       method: "POST",
-      headers: { "X-Organization-Id": organizationId },
+      headers: tenantHeaders(organizationId),
     },
   );
   if (!res.ok) throw new Error(`Import job failed ${res.status}`);
@@ -74,10 +81,7 @@ export async function createImportJob(organizationId: string, sourceFileId: stri
 export async function saveClientOnboarding(organizationId: string, payload: Record<string, unknown>) {
   const res = await fetch(`${API_BASE}/organizations/${organizationId}/client-onboarding`, {
     method: "PUT",
-    headers: {
-      "Content-Type": "application/json",
-      "X-Organization-Id": organizationId,
-    },
+    headers: tenantHeaders(organizationId, { "Content-Type": "application/json" }),
     body: JSON.stringify(payload),
   });
   if (!res.ok) throw new Error(`API error ${res.status}`);
@@ -87,10 +91,7 @@ export async function saveClientOnboarding(organizationId: string, payload: Reco
 export async function pollEtlDrop(organizationId: string, partnerId: string) {
   const res = await fetch(`${API_BASE}/etl/poll-drop`, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "X-Organization-Id": organizationId,
-    },
+    headers: tenantHeaders(organizationId, { "Content-Type": "application/json" }),
     body: JSON.stringify({ partner_id: partnerId }),
   });
   if (!res.ok) throw new Error(`ETL poll failed ${res.status}`);
@@ -194,7 +195,7 @@ export type ColumnMapping = Record<string, string>;
 
 export async function getReportingSummary(organizationId: string) {
   const res = await fetch(`${API_BASE}/reporting/summary`, {
-    headers: { "X-Organization-Id": organizationId },
+    headers: tenantHeaders(organizationId),
   });
   if (!res.ok) throw new Error(`Reporting summary failed ${res.status}`);
   return res.json() as Promise<ReportingSummary>;
@@ -202,7 +203,7 @@ export async function getReportingSummary(organizationId: string) {
 
 export async function getOrganizationProfile(organizationId: string) {
   const res = await fetch(`${API_BASE}/organizations/current/profile`, {
-    headers: { "X-Organization-Id": organizationId },
+    headers: tenantHeaders(organizationId),
   });
   if (!res.ok) throw new Error(`Profile load failed ${res.status}`);
   return res.json() as Promise<OrganizationProfile>;
@@ -222,10 +223,7 @@ export async function patchOrganizationProfile(
 ) {
   const res = await fetch(`${API_BASE}/organizations/current/profile`, {
     method: "PATCH",
-    headers: {
-      "Content-Type": "application/json",
-      "X-Organization-Id": organizationId,
-    },
+    headers: tenantHeaders(organizationId, { "Content-Type": "application/json" }),
     body: JSON.stringify(payload),
   });
   if (!res.ok) throw new Error(`Profile save failed ${res.status}`);
@@ -250,7 +248,7 @@ export async function createPartnerAccount(partnerId: string, name: string) {
 
 export async function getDiscrepancy(organizationId: string, id: string) {
   const res = await fetch(`${API_BASE}/discrepancies/${id}`, {
-    headers: { "X-Organization-Id": organizationId },
+    headers: tenantHeaders(organizationId),
   });
   if (!res.ok) throw new Error(`Get discrepancy failed ${res.status}`);
   return res.json() as Promise<DiscrepancyDetail>;
@@ -264,10 +262,7 @@ export async function patchDiscrepancyReview(
 ) {
   const res = await fetch(`${API_BASE}/discrepancies/${id}`, {
     method: "PATCH",
-    headers: {
-      "Content-Type": "application/json",
-      "X-Organization-Id": organizationId,
-    },
+    headers: tenantHeaders(organizationId, { "Content-Type": "application/json" }),
     body: JSON.stringify({ review_status, review_comment }),
   });
   if (!res.ok) throw new Error(`Review update failed ${res.status}`);
@@ -277,7 +272,7 @@ export async function patchDiscrepancyReview(
 export async function openDisputeCase(organizationId: string, discrepancyId: string) {
   const res = await fetch(`${API_BASE}/discrepancies/${discrepancyId}/open-case`, {
     method: "POST",
-    headers: { "X-Organization-Id": organizationId },
+    headers: tenantHeaders(organizationId),
   });
   if (!res.ok) throw new Error(`Open dispute case failed ${res.status}`);
   return res.json() as Promise<{ id: string }>;
@@ -285,7 +280,7 @@ export async function openDisputeCase(organizationId: string, discrepancyId: str
 
 export async function listDisputeCases(organizationId: string) {
   const res = await fetch(`${API_BASE}/dispute-cases`, {
-    headers: { "X-Organization-Id": organizationId },
+    headers: tenantHeaders(organizationId),
   });
   if (!res.ok) throw new Error(`List dispute cases failed ${res.status}`);
   return res.json() as Promise<Array<{ id: string; discrepancy_id: string }>>;
@@ -293,7 +288,7 @@ export async function listDisputeCases(organizationId: string) {
 
 export async function getDisputeCase(organizationId: string, caseId: string) {
   const res = await fetch(`${API_BASE}/dispute-cases/${caseId}`, {
-    headers: { "X-Organization-Id": organizationId },
+    headers: tenantHeaders(organizationId),
   });
   if (!res.ok) throw new Error(`Get dispute case failed ${res.status}`);
   return res.json() as Promise<DisputeCaseDetail>;
@@ -310,7 +305,7 @@ export type OrganizationCurrent = {
 
 export async function getCurrentOrganization(organizationId: string) {
   const res = await fetch(`${API_BASE}/organizations/current`, {
-    headers: { "X-Organization-Id": organizationId },
+    headers: tenantHeaders(organizationId),
   });
   if (!res.ok) throw new Error(`Get organization failed ${res.status}`);
   return res.json() as Promise<OrganizationCurrent>;
@@ -319,10 +314,7 @@ export async function getCurrentOrganization(organizationId: string) {
 export async function patchOrgAutonomy(organizationId: string, autonomy_tier: AutonomyTier) {
   const res = await fetch(`${API_BASE}/organizations/current`, {
     method: "PATCH",
-    headers: {
-      "Content-Type": "application/json",
-      "X-Organization-Id": organizationId,
-    },
+    headers: tenantHeaders(organizationId, { "Content-Type": "application/json" }),
     body: JSON.stringify({ autonomy_tier }),
   });
   if (!res.ok) throw new Error(`Update autonomy failed ${res.status}`);
@@ -332,7 +324,7 @@ export async function patchOrgAutonomy(organizationId: string, autonomy_tier: Au
 export async function negotiateDisputeCase(organizationId: string, caseId: string) {
   const res = await fetch(`${API_BASE}/dispute-cases/${caseId}/negotiate`, {
     method: "POST",
-    headers: { "X-Organization-Id": organizationId },
+    headers: tenantHeaders(organizationId),
   });
   if (!res.ok) throw new Error(`Negotiate failed ${res.status}`);
   return res.json();
@@ -345,7 +337,7 @@ export type OutboundMailStatus = {
 
 export async function getDisputeOutboundMail(organizationId: string) {
   const res = await fetch(`${API_BASE}/dispute-cases/outbound-mail`, {
-    headers: { "X-Organization-Id": organizationId },
+    headers: tenantHeaders(organizationId),
   });
   if (!res.ok) throw new Error(`Outbound mail status failed ${res.status}`);
   return res.json() as Promise<OutboundMailStatus>;
@@ -358,10 +350,7 @@ export async function approveSendDispute(
 ) {
   const res = await fetch(`${API_BASE}/dispute-cases/${caseId}/approve-send`, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "X-Organization-Id": organizationId,
-    },
+    headers: tenantHeaders(organizationId, { "Content-Type": "application/json" }),
     body: JSON.stringify(messageId ? { message_id: messageId } : {}),
   });
   if (!res.ok) throw new Error(`Approve send failed ${res.status}`);
@@ -371,7 +360,7 @@ export async function approveSendDispute(
 export async function stopDisputeCase(organizationId: string, caseId: string) {
   const res = await fetch(`${API_BASE}/dispute-cases/${caseId}/stop`, {
     method: "POST",
-    headers: { "X-Organization-Id": organizationId },
+    headers: tenantHeaders(organizationId),
   });
   if (!res.ok) throw new Error(`Stop case failed ${res.status}`);
   return res.json();
@@ -384,10 +373,7 @@ export async function recordDisputeCredit(
 ) {
   const res = await fetch(`${API_BASE}/dispute-cases/${caseId}/record-credit`, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "X-Organization-Id": organizationId,
-    },
+    headers: tenantHeaders(organizationId, { "Content-Type": "application/json" }),
     body: JSON.stringify({ recovered_amount_minor }),
   });
   if (!res.ok) throw new Error(`Record credit failed ${res.status}`);
@@ -401,10 +387,7 @@ export async function postCarrierReply(
 ) {
   const res = await fetch(`${API_BASE}/dispute-cases/${caseId}/replies`, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "X-Organization-Id": organizationId,
-    },
+    headers: tenantHeaders(organizationId, { "Content-Type": "application/json" }),
     body: JSON.stringify(payload),
   });
   if (!res.ok) throw new Error(`Post reply failed ${res.status}`);
@@ -418,10 +401,7 @@ export async function proposeColumnMapping(
 ) {
   const res = await fetch(`${API_BASE}/ai/map-columns`, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "X-Organization-Id": organizationId,
-    },
+    headers: tenantHeaders(organizationId, { "Content-Type": "application/json" }),
     body: JSON.stringify({ headers, kind }),
   });
   if (!res.ok) throw new Error(`Column mapping failed ${res.status}`);
@@ -430,7 +410,7 @@ export async function proposeColumnMapping(
 
 export async function listDiscrepancies(organizationId: string) {
   const res = await fetch(`${API_BASE}/discrepancies`, {
-    headers: { "X-Organization-Id": organizationId },
+    headers: tenantHeaders(organizationId),
   });
   if (!res.ok) throw new Error(`List discrepancies failed ${res.status}`);
   return res.json() as Promise<DiscrepancySummary[]>;
@@ -444,10 +424,7 @@ export async function mapShipmentCsv(
 ) {
   const res = await fetch(`${API_BASE}/imports/map-csv`, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "X-Organization-Id": organizationId,
-    },
+    headers: tenantHeaders(organizationId, { "Content-Type": "application/json" }),
     body: JSON.stringify({
       import_job_id: importJobId,
       csv_text: csvText,
@@ -474,10 +451,7 @@ export async function mapInvoiceCsv(
 ) {
   const res = await fetch(`${API_BASE}/imports/map-invoice-csv`, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "X-Organization-Id": organizationId,
-    },
+    headers: tenantHeaders(organizationId, { "Content-Type": "application/json" }),
     body: JSON.stringify({
       import_job_id: importJobId,
       csv_text: csvText,
@@ -498,10 +472,7 @@ export async function mapInvoiceCsv(
 export async function runMatching(organizationId: string, importJobId?: string) {
   const res = await fetch(`${API_BASE}/matching/run`, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "X-Organization-Id": organizationId,
-    },
+    headers: tenantHeaders(organizationId, { "Content-Type": "application/json" }),
     body: JSON.stringify({ import_job_id: importJobId ?? null, run_compliance: true }),
   });
   if (!res.ok) throw new Error(`Matching run failed ${res.status}`);
