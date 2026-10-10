@@ -26,6 +26,8 @@ services:
         value: staging
       - key: ALLOW_DEV_TENANT_HEADER
         value: "1"
+      - key: SHIPRATE_TRY_DEMO
+        value: "1"
       - key: SHIPRATE_CORS_ORIGINS
         value: https://try.vaitros.com,https://shiprate-web.onrender.com
       - key: LOCAL_UPLOAD_DIR
@@ -41,7 +43,7 @@ services:
     name: shiprate-web
     runtime: node
     rootDir: apps/web
-    buildCommand: npm ci && npm run build
+    buildCommand: npm install && npm run build
     startCommand: npm start
     plan: starter
     region: oregon
