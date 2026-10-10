@@ -109,3 +109,11 @@ def ai_enabled_globally() -> bool:
     if raw.lower() in ("1", "true", "yes"):
         return True
     return bool(settings.shiprate_ai_enabled)
+
+
+def cors_allow_origins() -> list[str]:
+    """Comma-separated browser origins (e.g. https://try.vaitros.com)."""
+    raw = os.environ.get("SHIPRATE_CORS_ORIGINS", "").strip()
+    if not raw:
+        return ["http://localhost:43123", "http://127.0.0.1:43123"]
+    return [part.strip() for part in raw.split(",") if part.strip()]

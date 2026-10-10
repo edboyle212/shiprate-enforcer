@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.config import allow_dev_tenant_header, settings
+from app.config import allow_dev_tenant_header, cors_allow_origins, settings
 from app.middleware.auth import AuthMiddleware
 from app.routers import (
     ai,
@@ -27,7 +27,7 @@ def _validate_security_config() -> None:
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:43123", "http://127.0.0.1:43123"],
+    allow_origins=cors_allow_origins(),
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

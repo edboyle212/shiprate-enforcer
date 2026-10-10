@@ -1,0 +1,56 @@
+# Shiprate try demo — API + Next.js web + Postgres (try.vaitros.com).
+# https://render.com/docs/blueprint-spec
+
+databases:
+  - name: shiprate-db
+    plan: basic-256mb
+    databaseName: shiprate
+    user: shiprate
+
+services:
+  - type: web
+    name: shiprate-api
+    runtime: docker
+    dockerfilePath: ./apps/api/Dockerfile
+    dockerContext: .
+    healthCheckPath: /api/v1/health
+    plan: starter
+    region: oregon
+    disk:
+      name: shiprate-uploads
+      mountPath: /app/apps/api/data/uploads
+      sizeGB: 1
+    preDeployCommand: bash /app/scripts/render-predeploy-api.sh
+    envVars:
+      - key: ENV
+        value: staging
+      - key: ALLOW_DEV_TENANT_HEADER
+        value: "1"
+      - key: SHIPRATE_CORS_ORIGINS
+        value: https://try.vaitros.com,https://shiprate-web.onrender.com
+      - key: LOCAL_UPLOAD_DIR
+        value: /app/apps/api/data/uploads
+      - key: OUTBOUND_CARRIER_SEND_ENABLED
+        value: "false"
+      - key: DATABASE_URL
+        fromDatabase:
+          name: shiprate-db
+          property: connectionString
+
+  - type: web
+    name: shiprate-web
+    runtime: node
+    rootDir: apps/web
+    buildCommand: npm ci && npm run build
+    startCommand: npm start
+    plan: starter
+    region: oregon
+    domains:
+      - try.vaitros.com
+    envVars:
+      - key: NODE_VERSION
+        value: "20"
+      - key: NEXT_PUBLIC_DEFAULT_DEMO_ORG_ID
+        value: "01950000-0000-7000-8000-000000000010"
+      - key: NEXT_PUBLIC_API_URL
+        value: https://shiprate-api.onrender.com/api/v1
