@@ -3,15 +3,17 @@ set -euo pipefail
 ROOT="${SHIPRATE_REPO_ROOT:-$(cd "$(dirname "$0")/.." && pwd)}"
 cd "$ROOT/apps/api"
 export PYTHONPATH="${ROOT}/apps/api:${ROOT}"
+export SHIPRATE_REPO_ROOT="$ROOT"
 alembic upgrade head
 python scripts/seed_demo_northstar.py
 python - <<'PY'
 import asyncio
+import os
 import subprocess
 import sys
 from pathlib import Path
 
-REPO_ROOT = Path(__file__).resolve().parents[1]
+REPO_ROOT = Path(os.environ["SHIPRATE_REPO_ROOT"])
 sys.path.insert(0, str(REPO_ROOT / "apps/api"))
 sys.path.insert(0, str(REPO_ROOT))
 
