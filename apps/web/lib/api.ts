@@ -512,6 +512,213 @@ export async function runMatching(organizationId: string, importJobId?: string) 
   }>;
 }
 
+export type TraceQueueCounts = {
+  ready_to_review: number;
+  live_investigations: number;
+  awaiting_carrier: number;
+};
+
+export type TraceOrderRow = {
+  id: string;
+  external_order_id: string;
+  customer_name: string;
+  customer_email: string;
+  carrier_code: string;
+  tracking_reference: string;
+  ship_date: string;
+  case_id: string | null;
+  case_status: string | null;
+};
+
+export type TraceCarrierContact = {
+  id: string;
+  carrier_code: string;
+  contact_name: string;
+  email: string;
+  account_reference: string | null;
+};
+
+export type TraceFilingWindow = {
+  days: number | null;
+  months: number | null;
+  uncertain: boolean;
+  constant_name: string | null;
+  source_note: string;
+};
+
+export type TraceRules = {
+  carriers: string[];
+  reasons: string[];
+  evidence_kinds: string[];
+  email_sent_on_confirm: boolean;
+  by_carrier: Record<
+    string,
+    Record<
+      string,
+      {
+        required_fields: string[];
+        required_evidence: string[];
+        optional_evidence: string[];
+        filing_window: TraceFilingWindow;
+      }
+    >
+  >;
+};
+
+export type TracePreview = {
+  ok: boolean;
+  email_subject: string | null;
+  email_body: string | null;
+  email_sent: boolean;
+  normalized_tracking: string;
+  filing_deadline: string;
+  filing_window_source: string;
+  filing_window_uncertain: boolean;
+  recipient: TraceCarrierContact | null;
+  contact_ready: boolean;
+};
+
+export type TraceClaimPacket = {
+  id: string;
+  details: Record<string, unknown>;
+  evidence: { kind: string; filename: string; sha256_hex: string; storage_key: string }[];
+  email_subject: string;
+  email_body: string;
+  recipient: {
+    contact_name: string;
+    email: string;
+    account_reference: string | null;
+    carrier_code: string;
+  };
+  email_sent: boolean;
+  channel: string;
+};
+
+export class TraceApiError extends Error {
+  errors: { code: string; message: string }[];
+
+  constructor(message: string, errors: { code: string; message: string }[]) {
+    super(message);
+    this.errors = errors;
+  }
+}
+
+async function readTraceError(res: Response): Promise<TraceApiError> {
+  const body = await res.json().catch(() => null);
+  const errors = body?.detail?.errors;
+  if (Array.isArray(errors) && errors.length > 0) {
+    return new TraceApiError(
+      errors.map((error: { message?: string }) => error.message ?? "Request failed").join(" "),
+      errors,
+    );
+  }
+  const detail = typeof body?.detail === "string" ? body.detail : `Request failed (${res.status})`;
+  return new TraceApiError(detail, []);
+}
+
+function orgHeaders(organizationId: string, json = false): HeadersInit {
+  return json
+    ? { "Content-Type": "application/json", "X-Organization-Id": organizationId }
+    : { "X-Organization-Id": organizationId };
+}
+
+export async function getTraceRules(organizationId: string) {
+  const res = await fetch(`${API_BASE}/tracedesk/rules`, { headers: orgHeaders(organizationId) });
+  if (!res.ok) throw await readTraceError(res);
+  return res.json() as Promise<TraceRules>;
+}
+
+export async function getTraceQueue(organizationId: string, query: string) {
+  const params = new URLSearchParams();
+  if (query.trim()) params.set("q", query.trim());
+  const suffix = params.toString() ? `?${params}` : "";
+  const res = await fetch(`${API_BASE}/tracedesk/orders${suffix}`, { headers: orgHeaders(organizationId) });
+  if (!res.ok) throw await readTraceError(res);
+  return res.json() as Promise<{ counts: TraceQueueCounts; orders: TraceOrderRow[] }>;
+}
+
+export async function uploadTraceOrders(organizationId: string, file: File) {
+  const form = new FormData();
+  form.append("file", file);
+  const res = await fetch(`${API_BASE}/tracedesk/orders/upload`, {
+    method: "POST",
+    headers: orgHeaders(organizationId),
+    body: form,
+  });
+  if (!res.ok) throw await readTraceError(res);
+  return res.json() as Promise<{ created: number; skipped: number; errors: { row: number; message: string }[] }>;
+}
+
+export async function getTraceContacts(organizationId: string) {
+  const res = await fetch(`${API_BASE}/tracedesk/carrier-contacts`, { headers: orgHeaders(organizationId) });
+  if (!res.ok) throw await readTraceError(res);
+  return res.json() as Promise<{ contacts: TraceCarrierContact[] }>;
+}
+
+export async function uploadTraceContacts(organizationId: string, file: File) {
+  const form = new FormData();
+  form.append("file", file);
+  const res = await fetch(`${API_BASE}/tracedesk/carrier-contacts/upload`, {
+    method: "POST",
+    headers: orgHeaders(organizationId),
+    body: form,
+  });
+  if (!res.ok) throw await readTraceError(res);
+  return res.json() as Promise<{ created: number; updated: number; errors: { row: number; message: string }[] }>;
+}
+
+export async function previewTrace(
+  organizationId: string,
+  orderId: string,
+  payload: {
+    tracking_reference: string;
+    reason: string;
+    length_in: number;
+    width_in: number;
+    height_in: number;
+    contents_summary: string;
+    order_reference: string;
+    evidence: { kind: string; filename: string }[];
+    require_contact: boolean;
+  },
+) {
+  const res = await fetch(`${API_BASE}/tracedesk/orders/${orderId}/preview`, {
+    method: "POST",
+    headers: orgHeaders(organizationId, true),
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) throw await readTraceError(res);
+  return res.json() as Promise<TracePreview>;
+}
+
+export async function confirmTrace(
+  organizationId: string,
+  orderId: string,
+  fields: {
+    tracking_reference: string;
+    reason: string;
+    length_in: string;
+    width_in: string;
+    height_in: string;
+    contents_summary: string;
+    order_reference: string;
+  },
+  files: { shipment_photo?: File | null; sales_invoice?: File | null; purchase_invoice?: File | null },
+) {
+  const form = new FormData();
+  for (const [key, value] of Object.entries(fields)) form.append(key, value);
+  if (files.shipment_photo) form.append("shipment_photo", files.shipment_photo);
+  if (files.sales_invoice) form.append("sales_invoice", files.sales_invoice);
+  if (files.purchase_invoice) form.append("purchase_invoice", files.purchase_invoice);
+  const res = await fetch(`${API_BASE}/tracedesk/orders/${orderId}/confirm`, {
+    method: "POST",
+    headers: orgHeaders(organizationId),
+    body: form,
+  });
+  if (!res.ok) throw await readTraceError(res);
+  return res.json() as Promise<{ case_id: string; status: string; email_sent: boolean; packet: TraceClaimPacket }>;
+}
+
 export type PartnerOnboardingForm = {
   partner_name?: string;
   branding_mode?: string;
