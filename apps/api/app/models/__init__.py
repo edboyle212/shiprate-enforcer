@@ -1,14 +1,16 @@
 import enum
 import uuid
-from datetime import datetime
+from datetime import date, datetime
 
 from sqlalchemy import (
     BigInteger,
     Boolean,
+    Date,
     DateTime,
     Enum,
     ForeignKey,
     Integer,
+    Numeric,
     String,
     Text,
     UniqueConstraint,
@@ -611,3 +613,138 @@ class AiDecisionResult(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     request: Mapped["AiDecisionRequest"] = relationship(back_populates="result")
+
+
+class OrganizationCarrierContact(Base):
+    """Claim recipient uploaded by the client organization.
+
+    One row per organization and carrier. This is not `carrier_contacts`,
+    which is platform-owned and global.
+    """
+
+    __tablename__ = "organization_carrier_contacts"
+    __table_args__ = (
+        UniqueConstraint("organization_id", "carrier_code", name="uq_org_carrier_contact"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    organization_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("organizations.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    carrier_code: Mapped[str] = mapped_column(String(16), nullable=False)
+    contact_name: Mapped[str] = mapped_column(String(255), nullable=False)
+    email: Mapped[str] = mapped_column(String(320), nullable=False)
+    account_reference: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class TraceDeskOrderImport(Base):
+    __tablename__ = "tracedesk_order_imports"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    organization_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("organizations.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    original_filename: Mapped[str] = mapped_column(String(512), nullable=False)
+    sha256_hex: Mapped[str] = mapped_column(String(64), nullable=False)
+    storage_key: Mapped[str] = mapped_column(String(1024), nullable=False)
+    storage_backend: Mapped[str] = mapped_column(String(32), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class TraceDeskOrder(Base):
+    """Shipped order imported from CSV. One queue row. Not a RateGuard shipment."""
+
+    __tablename__ = "tracedesk_orders"
+    __table_args__ = (
+        UniqueConstraint("organization_id", "external_order_id", name="uq_tracedesk_order_external"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    organization_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("organizations.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    import_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("tracedesk_order_imports.id", ondelete="SET NULL"), nullable=True
+    )
+    external_order_id: Mapped[str] = mapped_column(String(128), nullable=False)
+    customer_name: Mapped[str] = mapped_column(String(255), nullable=False)
+    customer_email: Mapped[str] = mapped_column(String(320), nullable=False)
+    carrier_code: Mapped[str] = mapped_column(String(16), nullable=False)
+    tracking_reference: Mapped[str] = mapped_column(String(128), nullable=False)
+    ship_date: Mapped[date] = mapped_column(Date, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class TraceDeskCase(Base):
+    """A trace created complete: details and required evidence are already present."""
+
+    __tablename__ = "tracedesk_cases"
+    __table_args__ = (UniqueConstraint("order_id", name="uq_tracedesk_case_order"),)
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    organization_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("organizations.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    order_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("tracedesk_orders.id", ondelete="CASCADE"), nullable=False
+    )
+    carrier_code: Mapped[str] = mapped_column(String(16), nullable=False)
+    tracking_reference: Mapped[str] = mapped_column(String(128), nullable=False)
+    reason: Mapped[str] = mapped_column(String(16), nullable=False)
+    length_in: Mapped[float] = mapped_column(Numeric(8, 2), nullable=False)
+    width_in: Mapped[float] = mapped_column(Numeric(8, 2), nullable=False)
+    height_in: Mapped[float] = mapped_column(Numeric(8, 2), nullable=False)
+    contents_summary: Mapped[str] = mapped_column(Text, nullable=False)
+    order_reference: Mapped[str] = mapped_column(String(128), nullable=False)
+    ship_date: Mapped[date] = mapped_column(Date, nullable=False)
+    status: Mapped[str] = mapped_column(String(32), nullable=False, default="open")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class TraceDeskEvidence(Base):
+    __tablename__ = "tracedesk_evidence"
+    __table_args__ = (UniqueConstraint("case_id", "kind", name="uq_tracedesk_evidence_kind"),)
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    organization_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("organizations.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    case_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("tracedesk_cases.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    kind: Mapped[str] = mapped_column(String(32), nullable=False)
+    original_filename: Mapped[str] = mapped_column(String(512), nullable=False)
+    content_type: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    byte_size: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    sha256_hex: Mapped[str] = mapped_column(String(64), nullable=False)
+    storage_key: Mapped[str] = mapped_column(String(1024), nullable=False)
+    storage_backend: Mapped[str] = mapped_column(String(32), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class TraceDeskClaimPacket(Base):
+    """Exportable claim addressed to the organization's uploaded carrier contact.
+
+    Confirm stores this packet. It does not send email.
+    """
+
+    __tablename__ = "tracedesk_claim_packets"
+    __table_args__ = (UniqueConstraint("case_id", name="uq_tracedesk_packet_case"),)
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    organization_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("organizations.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    case_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("tracedesk_cases.id", ondelete="CASCADE"), nullable=False
+    )
+    details_json: Mapped[dict] = mapped_column(JSONB, nullable=False)
+    evidence_json: Mapped[list] = mapped_column(JSONB, nullable=False)
+    email_subject: Mapped[str] = mapped_column(String(512), nullable=False)
+    email_body: Mapped[str] = mapped_column(Text, nullable=False)
+    recipient_label: Mapped[str] = mapped_column(String(255), nullable=False)
+    recipient_address: Mapped[str | None] = mapped_column(String(512), nullable=True)
+    email_sent: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    channel: Mapped[str] = mapped_column(String(32), nullable=False, default="claim_packet")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())

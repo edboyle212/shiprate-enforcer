@@ -11,6 +11,11 @@ export default {
       colors: {
         background: "var(--background)",
         foreground: "var(--foreground)",
+        td: {
+          accent: "var(--td-accent)",
+          ink: "var(--td-accent-ink)",
+          amber: "var(--td-amber)",
+        },
       },
     },
   },

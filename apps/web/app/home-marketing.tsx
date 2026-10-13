@@ -55,8 +55,17 @@ export function HomeMarketing() {
             style={{ display: "flex", flexDirection: "column", gap: 8, color: "inherit" }}
           >
             <span style={{ fontSize: 14, fontWeight: 700 }}>Open the daily app</span>
-            <span style={{ fontSize: 13, color: "var(--ink-2)" }}>Dashboard, imports, discrepancies, and account — four items in the sidebar.</span>
+            <span style={{ fontSize: 13, color: "var(--ink-2)" }}>Dashboard, imports, discrepancies, TraceDesk, and account — in the sidebar.</span>
             <span className="sr-link-accent" style={{ fontSize: 13, marginTop: 8 }}>Go to dashboard →</span>
+          </Link>
+          <Link
+            href="/tracedesk"
+            className="sr-panel"
+            style={{ display: "flex", flexDirection: "column", gap: 8, color: "inherit" }}
+          >
+            <span style={{ fontSize: 14, fontWeight: 700 }}>TraceDesk</span>
+            <span style={{ fontSize: 13, color: "var(--ink-2)" }}>Save a claim packet to the carrier contact this organization uploaded. Confirm does not send email.</span>
+            <span className="sr-link-accent" style={{ fontSize: 13, marginTop: 8 }}>Open TraceDesk →</span>
           </Link>
           <Link
             href={`/partner/${DEMO_PARTNER_SLUG}/onboarding`}

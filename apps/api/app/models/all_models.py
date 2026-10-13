@@ -14,6 +14,7 @@ from app.models import (
     ImportJob,
     ImportRow,
     Organization,
+    OrganizationCarrierContact,
     OrganizationMembership,
     RateCardVersion,
     RatingExplanation,
@@ -21,6 +22,11 @@ from app.models import (
     Shipment,
     ShipmentInvoiceMatch,
     SourceFile,
+    TraceDeskCase,
+    TraceDeskClaimPacket,
+    TraceDeskEvidence,
+    TraceDeskOrder,
+    TraceDeskOrderImport,
     User,
 )
 
@@ -40,6 +46,7 @@ __all__ = [
     "ImportJob",
     "ImportRow",
     "Organization",
+    "OrganizationCarrierContact",
     "OrganizationMembership",
     "RateCardVersion",
     "RatingExplanation",
@@ -47,5 +54,10 @@ __all__ = [
     "Shipment",
     "ShipmentInvoiceMatch",
     "SourceFile",
+    "TraceDeskCase",
+    "TraceDeskClaimPacket",
+    "TraceDeskEvidence",
+    "TraceDeskOrder",
+    "TraceDeskOrderImport",
     "User",
 ]

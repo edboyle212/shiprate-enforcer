@@ -15,6 +15,7 @@ from app.routers import (
     partners,
     rating,
     reporting,
+    tracedesk,
 )
 
 app = FastAPI(title="Shiprate Enforcer API", version="0.1.0")
@@ -46,3 +47,4 @@ app.include_router(compliance.router, prefix=prefix, tags=["compliance"])
 app.include_router(disputes.router, prefix=prefix, tags=["disputes"])
 app.include_router(reporting.router, prefix=prefix, tags=["reporting"])
 app.include_router(ai.router, prefix=prefix, tags=["ai"])
+app.include_router(tracedesk.router, prefix=prefix, tags=["tracedesk"])

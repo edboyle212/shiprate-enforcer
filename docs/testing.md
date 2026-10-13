@@ -43,6 +43,8 @@ PYTHONPATH=apps/api pytest apps/api/tests -v
 | `test_org_profile.py` | Profile GET/PATCH updates name, tolerances, autonomy; recovery fee stays platform-set. |
 | `test_partner_accounts.py` | Partner account list is scoped to that partner; detail 404s for another partner's org. |
 | `test_reporting_summary.py` | `GET /reporting/summary` returns dashboard KPI keys (`discrepancy_count`, `total_overcharge_minor`, `open_disputes`, `recovered_total_minor`, `fee_total_minor`, `import_job_count`, `compliance_rate`, `compliance_rate_note`). |
+| `test_tracedesk_rules.py` | UPS, FedEx, and USPS reference formats, per-reason evidence, and filing windows measured from ship date. |
+| `test_tracedesk_cases.py` | Order and contact CSV, queue counts and search, and create-case. Confirm stores a packet addressed to the organization's uploaded contact and does not send. |
 
 Golden fixtures live in `apps/api/tests/fixtures/`:
 

@@ -11,6 +11,7 @@ const APP_ROUTES = [
   { path: "/imports", title: /Import/i },
   { path: "/discrepancies", title: /Discrepanc/i },
   { path: "/account", title: /Account/i },
+  { path: "/tracedesk", title: /TraceDesk/i },
   { path: `/partner/${DEMO_PARTNER_SLUG}/onboarding`, title: /onboarding|partner/i },
   { path: `/partner/${DEMO_PARTNER_SLUG}/accounts`, title: /account|partner/i },
 ];

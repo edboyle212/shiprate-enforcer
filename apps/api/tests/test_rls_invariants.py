@@ -38,6 +38,12 @@ TENANT_TABLES = [
     "ai_decision_requests",
     "ai_decision_results",
     "etl_processed_objects",
+    "organization_carrier_contacts",
+    "tracedesk_order_imports",
+    "tracedesk_orders",
+    "tracedesk_cases",
+    "tracedesk_evidence",
+    "tracedesk_claim_packets",
 ]
 
 ORG_A = uuid.UUID("01950000-0000-7000-8000-0000000000c1")

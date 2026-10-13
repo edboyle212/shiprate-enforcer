@@ -37,6 +37,8 @@ npm run dev
 
 Dev server listens on [http://127.0.0.1:43123](http://127.0.0.1:43123).
 
+TraceDesk (`/tracedesk`) is the carrier-investigation queue beside RateGuard. Upload a shipped-order CSV and a carrier-contact CSV for the same organization. Raising a trace from an order row saves a claim packet addressed to that contact. Confirm does not send email.
+
 Routes:
 
 - Dashboard: `/dashboard`
