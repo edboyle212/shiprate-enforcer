@@ -95,9 +95,16 @@ def allow_dev_tenant_header() -> bool:
     return raw.lower() in ("1", "true", "yes")
 
 
+def try_demo_public_mode() -> bool:
+    """Public try host (try.vaitros.com): synthetic bearer only when explicitly enabled."""
+    return os.environ.get("SHIPRATE_TRY_DEMO", "").lower() in ("1", "true", "yes")
+
+
 def allow_test_bearer() -> bool:
     if settings.env == "production":
         return False
+    if settings.env == "staging" and try_demo_public_mode():
+        return True
     if settings.env in ("test", "local"):
         raw = os.environ.get("SHIPRATE_ALLOW_TEST_BEARER", "1")
         return raw.lower() not in ("0", "false", "no")
@@ -109,3 +116,11 @@ def ai_enabled_globally() -> bool:
     if raw.lower() in ("1", "true", "yes"):
         return True
     return bool(settings.shiprate_ai_enabled)
+
+
+def cors_allow_origins() -> list[str]:
+    """Comma-separated browser origins (e.g. https://try.vaitros.com)."""
+    raw = os.environ.get("SHIPRATE_CORS_ORIGINS", "").strip()
+    if not raw:
+        return ["http://localhost:43123", "http://127.0.0.1:43123"]
+    return [part.strip() for part in raw.split(",") if part.strip()]
