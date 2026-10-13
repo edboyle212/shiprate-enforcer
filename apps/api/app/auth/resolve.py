@@ -11,7 +11,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.clerk import verify_clerk_token
 from app.auth.principal import Principal
-from app.config import allow_dev_tenant_header, allow_test_bearer, settings, try_demo_public_mode
+from app.config import (
+    allow_dev_tenant_header,
+    allow_test_bearer,
+    settings,
+    try_demo_public_mode,
+)
 from app.models import OrganizationMembership, PartnerMembership, PlatformAdmin, User
 
 
